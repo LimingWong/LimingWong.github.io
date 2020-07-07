@@ -30,7 +30,7 @@
 <meta property="og:description" content="在实际编程中，经常用到c++的容器，有时候会忘了容器的某个成员函数或者变量或者用法，因此记录在此。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-07-07T02:42:03.000Z">
-<meta property="article:modified_time" content="2020-07-07T15:45:25.430Z">
+<meta property="article:modified_time" content="2020-07-07T15:53:29.763Z">
 <meta property="article:author" content="Xiaowang">
 <meta property="article:tag" content="c++">
 <meta property="article:tag" content="c++容器">
@@ -200,7 +200,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-07-07 10:42:03 / Modified: 23:45:25" itemprop="dateCreated datePublished" datetime="2020-07-07T10:42:03+08:00">2020-07-07</time>
+              <time title="Created: 2020-07-07 10:42:03 / Modified: 23:53:29" itemprop="dateCreated datePublished" datetime="2020-07-07T10:42:03+08:00">2020-07-07</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -243,7 +243,7 @@
 <li><p><code>vector();</code>//默认构造函数</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; v0;<span class="comment">//系统不会为v0分配空间，此时v0.begin==v0.end().</span></span><br></pre></td></tr></table></figure></li>
 <li><p><code>explicit vector(size_type count);</code></p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; <span class="title">v1</span><span class="params">(<span class="number">3</span>)</span></span>;<span class="comment">//创建包含三个元素的vector，</span></span><br><span class="line">                  <span class="comment">//每个元素由自身的默认构造函数构造</span></span><br><span class="line">									<span class="comment">//如果元素类型没有默认构造函数，则不可以用此构造函数构造容器</span></span><br></pre></td></tr></table></figure></li>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; <span class="title">v1</span><span class="params">(<span class="number">3</span>)</span></span>;<span class="comment">//创建包含三个元素的vector</span></span><br><span class="line"><span class="comment">//每个元素由自身的默认构造函数构造,如果元素类型没有默认构造函数，则不可以用此构造函数构造容器</span></span><br></pre></td></tr></table></figure></li>
 <li><p><code>vector(size_type count, const Type&amp; value);</code>//</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; <span class="title">v2</span><span class="params">(<span class="number">5</span>, <span class="number">2</span>)</span></span>;<span class="comment">//创建有5个元素的容器，每个都是2</span></span><br></pre></td></tr></table></figure></li>
 <li><p><code>vector(const vector&amp; source)</code></p>
