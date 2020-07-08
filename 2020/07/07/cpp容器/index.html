@@ -30,7 +30,7 @@
 <meta property="og:description" content="在实际编程中，经常用到c++的容器，有时候会忘了容器的某个成员函数或者变量或者用法，因此记录在此。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-07-07T02:42:03.000Z">
-<meta property="article:modified_time" content="2020-07-08T00:12:33.123Z">
+<meta property="article:modified_time" content="2020-07-08T00:30:14.134Z">
 <meta property="article:author" content="Xiaowang">
 <meta property="article:tag" content="c++">
 <meta property="article:tag" content="c++容器">
@@ -206,7 +206,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-07-08 08:12:33" itemprop="dateModified" datetime="2020-07-08T08:12:33+08:00">2020-07-08</time>
+                <time title="Modified: 2020-07-08 08:30:14" itemprop="dateModified" datetime="2020-07-08T08:30:14+08:00">2020-07-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -243,8 +243,8 @@
 </blockquote>
 <p>可以看出，顺序容器类似于数组，但是比数组更强大，容器提供了比数组更多的操作。顺序容器主要有<code>string</code>, <code>vector</code>,<code>deque</code>,<code>array</code>,<code>list</code>,<code>forward_list</code>。其中<code>string</code>,<code>vector</code>,<code>deque</code>,<code>array</code>具有随机访问的能力，即可以通过下标访问元素。<code>list</code>和<code>forward_list</code>只能顺序访问。这些顺序容器具有不同的特性，适用于不同的场景使用。</p>
 <h2 id="string和vector">1.1 string和vector</h2>
-<p><code>string</code>可以看作是<code>vector&lt;char&gt;</code>,是一种特殊的顺序容器。这两种容器将元素保存在连续的内存空间中。这种容器在尾部的插入或者删除操作很快，但是在中间位置添加或者删除就会非常耗时。</p>
-<h3 id="vector-的构造函数部分">vector 的构造函数（部分）</h3>
+<p><code>string</code>可以看作是<code>vector&lt;char&gt;</code>,是一种特殊的顺序容器。这两种容器将元素保存在连续的内存空间中。这种容器在尾部的插入或者删除操作很快，但是在中间位置添加或者删除就会非常耗时。<code>string</code>不同于<code>vector</code>的重要一点是<code>string</code>内部的</p>
+<h3 id="vector-的构造函数部分">1.1.1 vector 的构造函数（部分）</h3>
 <ul>
 <li><p><code>vector();</code>//默认构造函数</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; v0;<span class="comment">//系统不会为v0分配空间，此时v0.begin==v0.end().</span></span><br></pre></td></tr></table></figure></li>
@@ -258,7 +258,8 @@
 <p>只要只要容器内的元素类型匹配，v2可以是string，list，deque，array，set等。</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">vecotr&lt;<span class="keyword">int</span>&gt; <span class="title">v4</span><span class="params">(v2.<span class="built_in">begin</span>() + <span class="number">1</span>, v2.<span class="built_in">begin</span>() + <span class="number">3</span>)</span></span>;<span class="comment">//复制v2的一段构造v4</span></span><br></pre></td></tr></table></figure></li>
 <li><p><code>vector&lt;initializer_list&lt;Type&gt; init_list, const Allocator&amp; allocator&gt;</code></p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; v5&#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>&#125;;<span class="comment">//列表初始化</span></span><br><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; v5 = &#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>&#125;;<span class="comment">//与上面一样</span></span><br></pre></td></tr></table></figure></li>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; v5&#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>&#125;;<span class="comment">//列表初始化</span></span><br><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; v5 = &#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>&#125;;<span class="comment">//与上面一样</span></span><br></pre></td></tr></table></figure>
+<h3 id="成员函数">1.1.2 成员函数</h3></li>
 </ul>
 <h1 id="关联容器">关联容器</h1>
 <h2 id="map和set">map和set</h2>
@@ -340,7 +341,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#顺序容器"><span class="nav-text">1. 顺序容器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#string和vector"><span class="nav-text">1.1 string和vector</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#vector-的构造函数部分"><span class="nav-text">vector 的构造函数（部分）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#关联容器"><span class="nav-text">关联容器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#map和set"><span class="nav-text">map和set</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#unordered_map和unordered_set"><span class="nav-text">unordered_map和unordered_set</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#顺序容器"><span class="nav-text">1. 顺序容器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#string和vector"><span class="nav-text">1.1 string和vector</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#vector-的构造函数部分"><span class="nav-text">1.1.1 vector 的构造函数（部分）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#成员函数"><span class="nav-text">1.1.2 成员函数</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#关联容器"><span class="nav-text">关联容器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#map和set"><span class="nav-text">map和set</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#unordered_map和unordered_set"><span class="nav-text">unordered_map和unordered_set</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
