@@ -22,18 +22,19 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"KWFE73CESY","apiKey":"5438c68878ca12b68378b626910ca2bf","indexName":"blog_search","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="article">
-<meta property="og:title" content="Linux系统服务配置">
-<meta property="og:url" content="https://github.com/LimingWong/2020/09/21/Linux%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%E9%85%8D%E7%BD%AE/index.html">
+  <meta name="description" content="C语言中有malloc、calloc和realloc三个动态内存分配函数和free内存释放函数。三个内存分配函数都是在内存的堆中开辟内存。 malloc malloc函数的原型为：  void *malloc(size_t size);  其分配size个字节的内存块，并且返回指向该内存块的指针。该内存空间不会被初始化，因此其内存空间内的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C语言中的动态内存分配">
+<meta property="og:url" content="https://github.com/LimingWong/2020/10/03/C%E8%AF%AD%E8%A8%80%E4%B8%AD%E7%9A%84%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/index.html">
 <meta property="og:site_name" content="leegen&#39;s blog">
+<meta property="og:description" content="C语言中有malloc、calloc和realloc三个动态内存分配函数和free内存释放函数。三个内存分配函数都是在内存的堆中开辟内存。 malloc malloc函数的原型为：  void *malloc(size_t size);  其分配size个字节的内存块，并且返回指向该内存块的指针。该内存空间不会被初始化，因此其内存空间内的">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2020-09-21T02:51:14.000Z">
-<meta property="article:modified_time" content="2020-09-21T02:52:27.000Z">
+<meta property="article:published_time" content="2020-10-03T13:19:11.000Z">
+<meta property="article:modified_time" content="2020-10-03T16:08:47.000Z">
 <meta property="article:author" content="leegen">
-<meta property="article:tag" content="linux 设置服务">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="https://github.com/LimingWong/2020/09/21/Linux%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%E9%85%8D%E7%BD%AE/">
+<link rel="canonical" href="https://github.com/LimingWong/2020/10/03/C%E8%AF%AD%E8%A8%80%E4%B8%AD%E7%9A%84%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/">
 
 
 <script id="page-configurations">
@@ -46,7 +47,7 @@
   };
 </script>
 
-  <title>Linux系统服务配置 | leegen's blog</title>
+  <title>C语言中的动态内存分配 | leegen's blog</title>
   
 
 
@@ -173,7 +174,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/09/21/Linux%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%E9%85%8D%E7%BD%AE/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/10/03/C%E8%AF%AD%E8%A8%80%E4%B8%AD%E7%9A%84%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/xueren.jpg">
@@ -186,7 +187,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Linux系统服务配置
+          C语言中的动态内存分配
         </h1>
 
         <div class="post-meta">
@@ -195,27 +196,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-09-21 10:51:14 / Modified: 10:52:27" itemprop="dateCreated datePublished" datetime="2020-09-21T10:51:14+08:00">2020-09-21</time>
+              <time title="Created: 2020-10-03 21:19:11" itemprop="dateCreated datePublished" datetime="2020-10-03T21:19:11+08:00">2020-10-03</time>
             </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-10-04 00:08:47" itemprop="dateModified" datetime="2020-10-04T00:08:47+08:00">2020-10-04</time>
               </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/Ubuntu/" itemprop="url" rel="index"><span itemprop="name">Ubuntu</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/Ubuntu/Centos/" itemprop="url" rel="index"><span itemprop="name">Centos</span></a>
-                </span>
-            </span>
 
           
             <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
@@ -235,7 +225,13 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        
+        <p>C语言中有malloc、calloc和realloc三个动态内存分配函数和free内存释放函数。三个内存分配函数都是在内存的堆中开辟内存。</p>
+<h1 id="malloc">malloc</h1>
+<p>malloc函数的原型为：</p>
+<blockquote>
+<p>void *malloc(size_t size);</p>
+</blockquote>
+<p>其分配size个字节的内存块，并且返回指向该内存块的指针。该内存空间不会被初始化，因此其内存空间内的</p>
 
     </div>
 
@@ -246,10 +242,6 @@
 
 
       <footer class="post-footer">
-          
-          <div class="post-tags">
-              <a href="/tags/linux-%E8%AE%BE%E7%BD%AE%E6%9C%8D%E5%8A%A1/" rel="tag"><i class="fa fa-tag"></i> linux 设置服务</a>
-          </div>
 
         
 
@@ -257,12 +249,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/07/29/%E5%85%B3%E8%81%94%E5%AE%B9%E5%99%A8/" rel="prev" title="c++关联容器">
-      <i class="fa fa-chevron-left"></i> c++关联容器
+    <a href="/2020/09/21/Linux%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%E9%85%8D%E7%BD%AE/" rel="prev" title="Linux系统服务配置">
+      <i class="fa fa-chevron-left"></i> Linux系统服务配置
     </a></div>
       <div class="post-nav-item">
-    <a href="/2020/10/03/C%E8%AF%AD%E8%A8%80%E4%B8%AD%E7%9A%84%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" rel="next" title="C语言中的动态内存分配">
-      C语言中的动态内存分配 <i class="fa fa-chevron-right"></i>
+    <a href="/2020/10/05/ptmaloc%E3%80%81jemalloc%E5%92%8Ctcmalloc/" rel="next" title="ptmaloc、jemalloc和tcmalloc">
+      ptmaloc、jemalloc和tcmalloc <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -322,6 +314,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#malloc"><span class="nav-text">malloc</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
