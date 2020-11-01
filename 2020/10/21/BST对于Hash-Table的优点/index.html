@@ -30,7 +30,7 @@
 <meta property="og:description" content="Hash Table在进行以下操作时复杂度都为O(1):  搜索 插入 删除  以上的操作在自平衡的BST中（如Red-Black Tree，AVL Tree）时间复杂度为O(logn). Hash Table貌似方方面面都比BST好，那我们什么时候应该用BST而不是Hash Table呢？BST的优势是什么？下面是BST的主要的优势：  可以通过中序遍历BST得到有序的keys">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-10-21T02:02:03.000Z">
-<meta property="article:modified_time" content="2020-10-21T02:55:19.985Z">
+<meta property="article:modified_time" content="2020-11-01T07:01:46.294Z">
 <meta property="article:author" content="leegen">
 <meta property="article:tag" content="BST, Hash Table">
 <meta name="twitter:card" content="summary">
@@ -197,10 +197,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-10-21 10:02:03 / Modified: 10:55:19" itemprop="dateCreated datePublished" datetime="2020-10-21T10:02:03+08:00">2020-10-21</time>
+              <time title="Created: 2020-10-21 10:02:03" itemprop="dateCreated datePublished" datetime="2020-10-21T10:02:03+08:00">2020-10-21</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-01 15:01:46" itemprop="dateModified" datetime="2020-11-01T15:01:46+08:00">2020-11-01</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -238,12 +244,15 @@
 <p>以上的操作在自平衡的BST中（如Red-Black Tree，AVL Tree）时间复杂度为<code>O(logn)</code>.</p>
 <p>Hash Table貌似方方面面都比BST好，那我们什么时候应该用BST而不是Hash Table呢？BST的优势是什么？下面是BST的主要的优势：</p>
 <ul>
-<li>可以通过中序遍历BST得到有序的keys，这在Hash Table中并不是一个自然的操作；</li>
-<li>BST进行第k大查找、查找前任和继任元素、范围查询时非常容易，但这些操作对Hash Table并不自然； <a id="more"></a></li>
-<li>BST比Hash Table更容易实现，实现Hashing时通常需要借助编程语言提供的库；</li>
-<li>对于自平衡的BST，所有的操作保证在<code>O(logn)</code>时间内完成，但是对于hashing操作，<code>O(1)</code>是平均时间，在执行特定的操作时可能非常耗费时间，尤其是在进行rehash时。</li>
+<li><p>可以通过中序遍历BST得到有序的keys，这在Hash Table中并不是一个自然的操作；</p></li>
+<li><p>BST进行第k大查找、查找前任和继任元素、范围查询时非常容易，但这些操作对Hash Table并不自然； <a id="more"></a></p></li>
+<li><p>BST比Hash Table更容易实现，实现Hashing时通常需要借助编程语言提供的库；</p></li>
+<li><p>对于自平衡的BST，所有的操作保证在<code>O(logn)</code>时间内完成，但是对于hashing操作，<code>O(1)</code>是平均时间，在执行特定的操作时可能非常耗费时间，尤其是在进行rehash时。</p></li>
 </ul>
-<p><code>reference</code> - <a href="https://www.geeksforgeeks.org/advantages-of-bst-over-hash-table/" target="_blank" rel="noopener">Advantage of BST over Hash Table</a></p>
+<p><code>reference</code></p>
+<ul>
+<li><a href="https://www.geeksforgeeks.org/advantages-of-bst-over-hash-table/" target="_blank" rel="noopener">Advantage of BST over Hash Table</a></li>
+</ul>
 
     </div>
 
@@ -268,7 +277,10 @@
     <a href="/2020/10/05/ptmaloc%E3%80%81jemalloc%E5%92%8Ctcmalloc/" rel="prev" title="ptmaloc、jemalloc和tcmalloc">
       <i class="fa fa-chevron-left"></i> ptmaloc、jemalloc和tcmalloc
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2020/11/01/%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91-BST/" rel="next" title="二叉搜索树(BST)">
+      二叉搜索树(BST) <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -341,7 +353,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">6</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -352,7 +364,7 @@
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
