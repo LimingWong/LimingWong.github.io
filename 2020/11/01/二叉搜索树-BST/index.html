@@ -31,7 +31,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://github.com/images/bst.png">
 <meta property="article:published_time" content="2020-11-01T05:12:46.000Z">
-<meta property="article:modified_time" content="2020-11-01T08:23:31.049Z">
+<meta property="article:modified_time" content="2020-11-01T08:27:44.860Z">
 <meta property="article:author" content="leegen">
 <meta property="article:tag" content="BST">
 <meta name="twitter:card" content="summary">
@@ -201,7 +201,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-11-01 13:12:46 / Modified: 16:23:31" itemprop="dateCreated datePublished" datetime="2020-11-01T13:12:46+08:00">2020-11-01</time>
+              <time title="Created: 2020-11-01 13:12:46 / Modified: 16:27:44" itemprop="dateCreated datePublished" datetime="2020-11-01T13:12:46+08:00">2020-11-01</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -266,6 +266,10 @@
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Node&lt;T&gt; *<span class="title">successor</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (x != NIL &amp;&amp; x-&gt;right != NIL) <span class="keyword">return</span> <span class="built_in">min</span>(x-&gt;right);</span><br><span class="line">    Node&lt;T&gt; *p = x-&gt;parent;</span><br><span class="line">    <span class="keyword">while</span> (p != NIL &amp;&amp; x == p-&gt;right) &#123;</span><br><span class="line">        x = p;</span><br><span class="line">        p = x-&gt;parent;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> p;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">Node&lt;T&gt; *<span class="title">predecessor</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (x != NIL &amp;&amp; x-&gt;left != NIL) <span class="keyword">return</span> <span class="built_in">max</span>(x-&gt;left);</span><br><span class="line">    Node&lt;T&gt; *p = x-&gt;parent;</span><br><span class="line">    <span class="keyword">while</span>(p != NIL &amp;&amp; x == p-&gt;left) &#123;</span><br><span class="line">        x = p;</span><br><span class="line">        p = x-&gt;parent;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="二叉树的遍历">二叉树的遍历</h2>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//中序遍历    </span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">inorder_tree_wall</span><span class="params">(<span class="keyword">const</span> Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (x != NIL) &#123;</span><br><span class="line">            inorder_tree_wall(x-&gt;left);</span><br><span class="line">            <span class="built_in">cout</span> &lt;&lt; x-&gt;key &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">            inorder_tree_wall(x-&gt;right);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">//先序遍历</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">preorder_tree_wall</span><span class="params">(<span class="keyword">const</span> Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (x != NIL) &#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; x-&gt;key &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">        preorder_tree_wall(x-&gt;left);</span><br><span class="line">        preorder_tree_wall(x-&gt;right);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//后序遍历</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">postorder_tree_wall</span><span class="params">(<span class="keyword">const</span> Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (x != NIL) &#123;</span><br><span class="line">        postorder_tree_wall(x-&gt;left);</span><br><span class="line">        postorder_tree_wall(x-&gt;right);</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; x-&gt;key &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>refenrence</p>
+<p><a href="https://www.amazon.com/Introduction-Algorithms-3rd-MIT-Press/dp/0262033844" target="_blank" rel="noopener">introduction to algorithm</a></p></li>
+</ul>
 
     </div>
 
@@ -273,6 +277,12 @@
     
     
       
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\2020\11\01\AVL树\" rel="bookmark">AVL树</a></div>
+    </li>
+  </ul>
 
 
       <footer class="post-footer">
@@ -378,7 +388,7 @@
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

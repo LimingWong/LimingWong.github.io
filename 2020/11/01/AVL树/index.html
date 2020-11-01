@@ -22,15 +22,26 @@
     var CONFIG = {"hostname":"github.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"KWFE73CESY","apiKey":"5438c68878ca12b68378b626910ca2bf","indexName":"blog_search","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="article">
+  <meta name="description" content="AVL树是一种特殊的二叉搜索树，在满足BST的操作基础上，能够保证任意一个节点的左右孩子高度差不超过1。之所以这样设计，是因为BST的搜索操作在最坏的情况下时间复杂度为$O(n)$，而通常情况下为O(lgn)。树形结构退化成了线性结构，如下图所示：  linear-bst  AVL树能够在发生插入和删除操作之后对树进行调整，使其始终满足上述的特性。而满足上述特性的AVL树能够在执行所有操作">
+<meta property="og:type" content="article">
 <meta property="og:title" content="AVL树">
 <meta property="og:url" content="https://github.com/LimingWong/2020/11/01/AVL%E6%A0%91/index.html">
 <meta property="og:site_name" content="leegen&#39;s blog">
+<meta property="og:description" content="AVL树是一种特殊的二叉搜索树，在满足BST的操作基础上，能够保证任意一个节点的左右孩子高度差不超过1。之所以这样设计，是因为BST的搜索操作在最坏的情况下时间复杂度为$O(n)$，而通常情况下为O(lgn)。树形结构退化成了线性结构，如下图所示：  linear-bst  AVL树能够在发生插入和删除操作之后对树进行调整，使其始终满足上述的特性。而满足上述特性的AVL树能够在执行所有操作">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://github.com/images/linear-bst.png">
+<meta property="og:image" content="https://github.com/images/rotate.png">
+<meta property="og:image" content="https://github.com/images/leftleft.png">
+<meta property="og:image" content="https://github.com/images/leftright.png">
+<meta property="og:image" content="https://github.com/images/rightleft.png">
+<meta property="og:image" content="https://github.com/images/rightright">
 <meta property="article:published_time" content="2020-11-01T08:23:27.000Z">
-<meta property="article:modified_time" content="2020-11-01T08:23:27.722Z">
+<meta property="article:modified_time" content="2020-11-01T09:21:49.707Z">
 <meta property="article:author" content="leegen">
+<meta property="article:tag" content="BST">
+<meta property="article:tag" content="AVL">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/images/linear-bst.png">
 
 <link rel="canonical" href="https://github.com/LimingWong/2020/11/01/AVL%E6%A0%91/">
 
@@ -194,8 +205,18 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2020-11-01 16:23:27" itemprop="dateCreated datePublished" datetime="2020-11-01T16:23:27+08:00">2020-11-01</time>
+              <time title="Created: 2020-11-01 16:23:27 / Modified: 17:21:49" itemprop="dateCreated datePublished" datetime="2020-11-01T16:23:27+08:00">2020-11-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">数据结构</span></a>
+                </span>
             </span>
 
           
@@ -216,7 +237,47 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        
+        <p>AVL树是一种特殊的二叉搜索树，在满足BST的操作基础上，能够保证任意一个节点的左右孩子高度差不超过1。之所以这样设计，是因为BST的搜索操作在最坏的情况下时间复杂度为<code>$O(n)$</code>，而通常情况下为<code>O(lgn)</code>。树形结构退化成了线性结构，如下图所示：</p>
+<figure>
+<img src="/images/linear-bst.png" alt="" /><figcaption>linear-bst</figcaption>
+</figure>
+<p>AVL树能够在发生插入和删除操作之后对树进行调整，使其始终满足上述的特性。而满足上述特性的AVL树能够在执行所有操作时保证上界为<code>$O(lgn)$</code>的时间复杂度</p>
+<a id="more"></a>
+<h3 id="辅助函数">辅助函数</h3>
+<p>首先定义一个节点的高度：<span class="math inline">\(height(x) = max(height(x-&gt;left), height(x-&gt;right)) + 1\)</span>，NIL节点的高度定义为-1。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">height</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (x == NIL) <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">int</span> left_height = <span class="built_in">height</span>(x-&gt;left);</span><br><span class="line">    <span class="keyword">int</span> right_height = <span class="built_in">height</span>(x-&gt;right);</span><br><span class="line">    <span class="keyword">return</span> left_height &gt; right_height ? left_height + <span class="number">1</span> : right_height + <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>一个节点的balance factor定义为左右子树高度之差：<span class="math inline">\(balance_factor(x) = height(x-&gt;left) - height(x-&gt;right)\)</span>。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">balance_factor</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">height</span>(x-&gt;left) - <span class="built_in">height</span>(x-&gt;right);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果插入和删除使树不再满足上述性质，则要通过对节点左旋或者右旋的操作来调整。对一个节点进行左旋操作和右旋操作是一个可逆的过程，具体操作过程：</p>
+<figure>
+<img src="/images/rotate.png" alt="" /><figcaption>image-20201101170636474</figcaption>
+</figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">left_rotate</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Assume x's right child not null.</span></span><br><span class="line">    Node&lt;T&gt; *y = x-&gt;right;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// turn y's left child to x's right child.</span></span><br><span class="line">    x-&gt;right = y-&gt;left;</span><br><span class="line">    <span class="keyword">if</span> (y-&gt;left != NIL) y-&gt;left-&gt;parent = x;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// link x's parent to y.</span></span><br><span class="line">    y-&gt;parent = x-&gt;parent;</span><br><span class="line">    <span class="keyword">if</span> (x-&gt;parent == NIL) &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;root_ptr = y;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (x == x-&gt;parent-&gt;left) &#123;</span><br><span class="line">        x-&gt;parent-&gt;left = y;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        x-&gt;parent-&gt;right = y;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// put x on y's left.</span></span><br><span class="line">    y-&gt;left = x;</span><br><span class="line">    x-&gt;parent = y;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">right_rotate</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// assume y's left child not null.</span></span><br><span class="line">    Node&lt;T&gt; *y = x-&gt;left;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// turn y's right child to x's left.</span></span><br><span class="line">    x-&gt;left = y-&gt;right;</span><br><span class="line">    <span class="keyword">if</span> (y-&gt;right != NIL) y-&gt;right-&gt;parent = x;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// link x's parent to y.</span></span><br><span class="line">    y-&gt;parent = x-&gt;parent;</span><br><span class="line">    <span class="keyword">if</span> (x-&gt;parent == NIL) &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;root_ptr = y;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (x == x-&gt;parent-&gt;left) &#123;</span><br><span class="line">        x-&gt;parent-&gt;left = y;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        x-&gt;parent-&gt;right = y;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// put x ont y's right.</span></span><br><span class="line">    y-&gt;right = x;</span><br><span class="line">    x-&gt;parent = y;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>插入和删除节点导致balance factor的绝对值不再小于等于1，就需要对对应的节点进行左旋或这右旋操作，具体有以下四种情况：</p>
+<p><code>case 1:left left case</code></p>
+<figure>
+<img src="\images\leftleft.png" alt="" /><figcaption>image-20201101171325180</figcaption>
+</figure>
+<p><code>case 2: left right case</code></p>
+<figure>
+<img src="\images\leftright.png" alt="" /><figcaption>image-20201101171442567</figcaption>
+</figure>
+<p><code>case 3: right left case</code></p>
+<figure>
+<img src="\images\rightleft.png" alt="" /><figcaption>image-20201101171541921</figcaption>
+</figure>
+<p><code>case 4: right right case</code></p>
+<figure>
+<img src="\images\rightright" alt="" /><figcaption>image-20201101171609263</figcaption>
+</figure>
+<p>实现代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">fix_balance</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (x != <span class="keyword">this</span>-&gt;NIL) &#123;</span><br><span class="line">        <span class="keyword">int</span> bf = <span class="keyword">this</span>-&gt;balance_factor(x);</span><br><span class="line">        <span class="keyword">if</span> (bf &gt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">int</span> child_bf =</span><br><span class="line">                <span class="keyword">this</span>-&gt;<span class="built_in">height</span>(x-&gt;left-&gt;left) - <span class="keyword">this</span>-&gt;<span class="built_in">height</span>(x-&gt;left-&gt;right);</span><br><span class="line">            <span class="keyword">if</span> (child_bf &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">//case 2</span></span><br><span class="line">                <span class="keyword">this</span>-&gt;left_rotate(x-&gt;left);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//case 1</span></span><br><span class="line">            <span class="keyword">this</span>-&gt;right_rotate(x);</span><br><span class="line">            x = x-&gt;parent;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (bf &lt; <span class="number">-1</span>) &#123;</span><br><span class="line">            <span class="keyword">int</span> child_bf = <span class="keyword">this</span>-&gt;<span class="built_in">height</span>(x-&gt;right-&gt;left) -</span><br><span class="line">                <span class="keyword">this</span>-&gt;<span class="built_in">height</span>(x-&gt;right-&gt;right);</span><br><span class="line">            <span class="keyword">if</span> (child_bf &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// case 3</span></span><br><span class="line">                <span class="keyword">this</span>-&gt;right_rotate(x-&gt;right);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// case 4</span></span><br><span class="line">            <span class="keyword">this</span>-&gt;left_rotate(x);</span><br><span class="line">            x = x-&gt;parent;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">//向上迭代，直到根节点。</span></span><br><span class="line">            x = x-&gt;parent;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="插入">插入</h4>
+<p>AVL树插入的操作与BST类似，先进行常规的插入操作，最后再进行调整。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">put</span><span class="params">(<span class="keyword">const</span> T &amp;key)</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">    <span class="keyword">auto</span> *node = <span class="keyword">new</span> Node&lt;T&gt;(key);</span><br><span class="line">    Node&lt;T&gt; *x = <span class="keyword">this</span>-&gt;root_ptr;</span><br><span class="line">    Node&lt;T&gt; *y = <span class="keyword">this</span>-&gt;NIL;</span><br><span class="line">    <span class="keyword">while</span> (x != <span class="keyword">this</span>-&gt;NIL) &#123;</span><br><span class="line">        y = x;</span><br><span class="line">        <span class="keyword">if</span> (key &lt; x-&gt;key) &#123;</span><br><span class="line">            x = x-&gt;left;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            x = x-&gt;right;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    node-&gt;parent = y;</span><br><span class="line">    <span class="keyword">if</span> (y == <span class="keyword">this</span>-&gt;NIL) &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;root_ptr = node;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (node-&gt;key &lt; y-&gt;key) &#123;</span><br><span class="line">        y-&gt;left = node;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        y-&gt;right = node;</span><br><span class="line">    &#125;</span><br><span class="line">    node-&gt;left = <span class="keyword">this</span>-&gt;NIL;</span><br><span class="line">    node-&gt;right = <span class="keyword">this</span>-&gt;NIL;</span><br><span class="line">    fix_balance(node);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="删除">删除</h3>
+<p>删除的操作与BST的类似，先进行常规的操作，最后再调整。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">delete_node</span><span class="params">(<span class="keyword">const</span> T &amp;key)</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">    <span class="comment">// z is going to point to the node to be deleted</span></span><br><span class="line">    Node&lt;T&gt; *z = <span class="keyword">this</span>-&gt;root_ptr;</span><br><span class="line">    <span class="keyword">while</span> (z != <span class="keyword">this</span>-&gt;NIL &amp;&amp; z-&gt;key != key) &#123;</span><br><span class="line">        <span class="keyword">if</span> (key &lt; z-&gt;key) &#123;</span><br><span class="line">            z = z-&gt;left;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            z = z-&gt;right;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    Node&lt;T&gt; *y = z;</span><br><span class="line">    Node&lt;T&gt; *x = <span class="keyword">this</span>-&gt;NIL;</span><br><span class="line">    <span class="keyword">if</span> (z-&gt;key == key) &#123;</span><br><span class="line">        <span class="keyword">if</span> (z-&gt;left == <span class="keyword">this</span>-&gt;NIL) &#123;</span><br><span class="line">            <span class="comment">// x point to z's left child.</span></span><br><span class="line">            x = z-&gt;right;</span><br><span class="line">            <span class="keyword">this</span>-&gt;transparent(z, z-&gt;right);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (z-&gt;right == <span class="keyword">this</span>-&gt;NIL) &#123;</span><br><span class="line">            <span class="comment">// x point to z's right child.</span></span><br><span class="line">            x = z-&gt;left;</span><br><span class="line">            <span class="keyword">this</span>-&gt;transparent(z, z-&gt;left);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// y point to the replacement node, x point to y's right child.</span></span><br><span class="line">            y = <span class="keyword">this</span>-&gt;<span class="built_in">min</span>(z-&gt;right);</span><br><span class="line">            x = y-&gt;right;</span><br><span class="line">            <span class="keyword">if</span> (y-&gt;parent == z) &#123;</span><br><span class="line">                x-&gt;parent = y;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">this</span>-&gt;transparent(y, y-&gt;right);</span><br><span class="line">                y-&gt;right = z-&gt;right;</span><br><span class="line">                z-&gt;right-&gt;parent = y;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">this</span>-&gt;transparent(z, y);</span><br><span class="line">            y-&gt;left = z-&gt;left;</span><br><span class="line">            z-&gt;left-&gt;parent = y;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">delete</span> z;</span><br><span class="line">        fix_balance(x-&gt;parent);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"key not exist."</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
     </div>
 
@@ -224,9 +285,20 @@
     
     
       
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\2020\11\01\二叉搜索树-BST\" rel="bookmark">二叉搜索树(BST)</a></div>
+    </li>
+  </ul>
 
 
       <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/BST/" rel="tag"><i class="fa fa-tag"></i> BST</a>
+              <a href="/tags/AVL/" rel="tag"><i class="fa fa-tag"></i> AVL</a>
+          </div>
 
         
 
@@ -296,6 +368,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#辅助函数"><span class="nav-text">辅助函数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#插入"><span class="nav-text">插入</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删除"><span class="nav-text">删除</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -321,7 +394,7 @@
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -445,6 +518,59 @@
   
 
   
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
 
   
 
