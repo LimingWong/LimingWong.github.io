@@ -194,7 +194,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-11-01 13:12:46 / Modified: 13:25:55" itemprop="dateCreated datePublished" datetime="2020-11-01T13:12:46+08:00">2020-11-01</time>
+              <time title="Created: 2020-11-01 13:12:46 / Modified: 15:33:38" itemprop="dateCreated datePublished" datetime="2020-11-01T13:12:46+08:00">2020-11-01</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -217,7 +217,20 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          
+          <p>动态集(Dynamic set)是一种数据结构，它通常支持以下全部或者部分操作：</p>
+<ul>
+<li>search(S,k)---返回x，其中x.key = k</li>
+<li>insert(S,x)---向S中插入x</li>
+<li>delete(S,x)---从S中删除x</li>
+<li>minimum(S) ---从S中返回x.key最小的元素x</li>
+<li>maximum(S) ---从S中返回x.key最大的元素x</li>
+<li>successor(S,x) ----返回比x.key大的最小元素y</li>
+<li>predecessor(S,x)---返回比x.key小的最大元素y</li>
+</ul>
+<p>搜索树是一种典型的动态集，它支持以上所有的操作。因此搜索树经常用来作为字典和优先队列的底层实现。二叉搜索树(BST)的每个节点通常包含key, data, left, right, parent等元素。一个典型的BST如下：</p>
+<figure>
+<img src="/images/bst.png" alt="" /><figcaption>二叉搜索树</figcaption>
+</figure>
 
       
     </div>
