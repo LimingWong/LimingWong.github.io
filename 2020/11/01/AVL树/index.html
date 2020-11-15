@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"KWFE73CESY","apiKey":"5438c68878ca12b68378b626910ca2bf","indexName":"blog_search","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"KWFE73CESY","apiKey":"5438c68878ca12b68378b626910ca2bf","indexName":"blog_search","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
   <meta name="description" content="AVL树是一种特殊的二叉搜索树，在满足BST的操作基础上，能够保证任意一个节点的左右孩子高度差不超过1。之所以这样设计，是因为BST的搜索操作在最坏的情况下时间复杂度为\(O(n)\)，而通常情况下为\(O(lgn)\)。树形结构退化成了线性结构，如下图所示：">
@@ -36,7 +36,7 @@
 <meta property="og:image" content="https://github.com/images/rightleft.png">
 <meta property="og:image" content="https://github.com/images/rightright.png">
 <meta property="article:published_time" content="2020-11-01T08:23:27.000Z">
-<meta property="article:modified_time" content="2020-11-13T03:25:30.123Z">
+<meta property="article:modified_time" content="2020-11-14T02:39:27.000Z">
 <meta property="article:author" content="leegen">
 <meta property="article:tag" content="BST">
 <meta property="article:tag" content="AVL">
@@ -110,7 +110,7 @@
       <h1 class="site-title">leegen's blog</h1>
       <span class="logo-line-after"><i></i></span>
     </a>
-      <p class="site-subtitle" itemprop="description">不平凡就是把平凡的事情反复做</p>
+      <p class="site-subtitle" itemprop="description">是哪个小可爱在看我 :)</p>
   </div>
 
   <div class="site-nav-right">
@@ -213,7 +213,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-13 11:25:30" itemprop="dateModified" datetime="2020-11-13T11:25:30+08:00">2020-11-13</time>
+                <time title="Modified: 2020-11-14 10:39:27" itemprop="dateModified" datetime="2020-11-14T10:39:27+08:00">2020-11-14</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -257,13 +257,13 @@
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">left_rotate</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Assume x's right child not null.</span></span><br><span class="line">    Node&lt;T&gt; *y = x-&gt;right;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// turn y's left child to x's right child.</span></span><br><span class="line">    x-&gt;right = y-&gt;left;</span><br><span class="line">    <span class="keyword">if</span> (y-&gt;left != NIL) y-&gt;left-&gt;parent = x;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// link x's parent to y.</span></span><br><span class="line">    y-&gt;parent = x-&gt;parent;</span><br><span class="line">    <span class="keyword">if</span> (x-&gt;parent == NIL) &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;root_ptr = y;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (x == x-&gt;parent-&gt;left) &#123;</span><br><span class="line">        x-&gt;parent-&gt;left = y;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        x-&gt;parent-&gt;right = y;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// put x on y's left.</span></span><br><span class="line">    y-&gt;left = x;</span><br><span class="line">    x-&gt;parent = y;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">right_rotate</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// assume y's left child not null.</span></span><br><span class="line">    Node&lt;T&gt; *y = x-&gt;left;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// turn y's right child to x's left.</span></span><br><span class="line">    x-&gt;left = y-&gt;right;</span><br><span class="line">    <span class="keyword">if</span> (y-&gt;right != NIL) y-&gt;right-&gt;parent = x;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// link x's parent to y.</span></span><br><span class="line">    y-&gt;parent = x-&gt;parent;</span><br><span class="line">    <span class="keyword">if</span> (x-&gt;parent == NIL) &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;root_ptr = y;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (x == x-&gt;parent-&gt;left) &#123;</span><br><span class="line">        x-&gt;parent-&gt;left = y;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        x-&gt;parent-&gt;right = y;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// put x ont y's right.</span></span><br><span class="line">    y-&gt;right = x;</span><br><span class="line">    x-&gt;parent = y;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>插入和删除节点导致balance factor的绝对值不再小于等于1，就需要对对应的节点进行左旋或这右旋操作，具体有以下四种情况：</p>
 <p><code>case 1:left left case</code></p>
-<p><img src="/images/leftleft.png" /></p>
+<p><img src="\images\leftleft.png" /></p>
 <p><code>case 2: left right case</code></p>
-<p><img src="/images/leftright.png" /></p>
+<p><img src="\images\leftright.png" /></p>
 <p><code>case 3: right left case</code></p>
-<p><img src="/images/rightleft.png" /></p>
+<p><img src="\images\rightleft.png" /></p>
 <p><code>case 4: right right case</code></p>
-<p><img src="/images/rightright.png" /></p>
+<p><img src="\images\rightright.png" /></p>
 <p>实现代码：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//suppose x is lowest node violating AVL</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">fix_balance</span><span class="params">(Node&lt;T&gt; *x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (x != <span class="keyword">this</span>-&gt;NIL) &#123;</span><br><span class="line">        <span class="keyword">int</span> bf = <span class="keyword">this</span>-&gt;balance_factor(x);</span><br><span class="line">        <span class="keyword">if</span> (bf &gt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">int</span> child_bf =</span><br><span class="line">                <span class="keyword">this</span>-&gt;<span class="built_in">height</span>(x-&gt;left-&gt;left) - <span class="keyword">this</span>-&gt;<span class="built_in">height</span>(x-&gt;left-&gt;right);</span><br><span class="line">            <span class="keyword">if</span> (child_bf &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">//case 2</span></span><br><span class="line">                <span class="keyword">this</span>-&gt;left_rotate(x-&gt;left);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//case 1</span></span><br><span class="line">            <span class="keyword">this</span>-&gt;right_rotate(x);</span><br><span class="line">            x = x-&gt;parent;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (bf &lt; <span class="number">-1</span>) &#123;</span><br><span class="line">            <span class="keyword">int</span> child_bf = <span class="keyword">this</span>-&gt;<span class="built_in">height</span>(x-&gt;right-&gt;left) -</span><br><span class="line">                <span class="keyword">this</span>-&gt;<span class="built_in">height</span>(x-&gt;right-&gt;right);</span><br><span class="line">            <span class="keyword">if</span> (child_bf &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// case 3</span></span><br><span class="line">                <span class="keyword">this</span>-&gt;right_rotate(x-&gt;right);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// case 4</span></span><br><span class="line">            <span class="keyword">this</span>-&gt;left_rotate(x);</span><br><span class="line">            x = x-&gt;parent;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">//向上迭代，直到根节点。</span></span><br><span class="line">            x = x-&gt;parent;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h4 id="插入">插入</h4>
@@ -383,18 +383,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-count">10</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-count">11</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

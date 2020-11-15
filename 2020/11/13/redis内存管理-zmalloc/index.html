@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/blog.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/blog.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/blog.png">
+  <link rel="mask-icon" href="/images/blog.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-big-counter.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"KWFE73CESY","apiKey":"5438c68878ca12b68378b626910ca2bf","indexName":"blog_search","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="redis在Linux平台上使用jemalloc作为默认的内存管理器，用户也可以自己修改使用tcmalloc、tcmalloc_minimal或者libc。 不管使用哪种内存管理器，redis都会进行统一的封装，使其对外的api保持一致。tcmalloc和jemalloc与c语言标准的内存分配api不一致，redis首先通过宏定义的方式统一映射，不同库的具体的映射关系如下：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis内存管理-zmalloc">
+<meta property="og:url" content="https://github.com/LimingWong/2020/11/13/redis%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-zmalloc/index.html">
+<meta property="og:site_name" content="leegen&#39;s blog">
+<meta property="og:description" content="redis在Linux平台上使用jemalloc作为默认的内存管理器，用户也可以自己修改使用tcmalloc、tcmalloc_minimal或者libc。 不管使用哪种内存管理器，redis都会进行统一的封装，使其对外的api保持一致。tcmalloc和jemalloc与c语言标准的内存分配api不一致，redis首先通过宏定义的方式统一映射，不同库的具体的映射关系如下：">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-11-13T06:02:11.000Z">
+<meta property="article:modified_time" content="2020-11-15T11:10:51.053Z">
+<meta property="article:author" content="leegen">
+<meta property="article:tag" content="内存管理">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://github.com/LimingWong/2020/11/13/redis%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-zmalloc/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>redis内存管理-zmalloc | leegen's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">leegen's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">是哪个小可爱在看我 :)</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/13/redis%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-zmalloc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xueren.jpg">
+      <meta itemprop="name" content="leegen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="leegen's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          redis内存管理-zmalloc
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-11-13 14:02:11" itemprop="dateCreated datePublished" datetime="2020-11-13T14:02:11+08:00">2020-11-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-15 19:10:51" itemprop="dateModified" datetime="2020-11-15T19:10:51+08:00">2020-11-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>redis在Linux平台上使用jemalloc作为默认的内存管理器，用户也可以自己修改使用tcmalloc、tcmalloc_minimal或者libc。</p>
+<p>不管使用哪种内存管理器，redis都会进行统一的封装，使其对外的api保持一致。tcmalloc和jemalloc与c语言标准的内存分配api不一致，redis首先通过宏定义的方式统一映射，不同库的具体的映射关系如下：</p>
+<a id="more"></a>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">zmalloc接口</th>
+<th style="text-align: center;">tcmalloc接口</th>
+<th style="text-align: center;">jemalloc接口</th>
+<th style="text-align: center;">ptmalloc（libc）</th>
+<th style="text-align: center;">allocation zones接口</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">malloc(size)</td>
+<td style="text-align: center;">tc_malloc(size)</td>
+<td style="text-align: center;">je_malloc(size)</td>
+<td style="text-align: center;">~</td>
+<td style="text-align: center;">~</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">calloc(count, size)</td>
+<td style="text-align: center;">tc_calloc(count, size)</td>
+<td style="text-align: center;">je_calloc(size)</td>
+<td style="text-align: center;">~</td>
+<td style="text-align: center;">~</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">realloc(ptr, size)</td>
+<td style="text-align: center;">tc_realloc(ptr, size)</td>
+<td style="text-align: center;">je_realloc(size)</td>
+<td style="text-align: center;">~</td>
+<td style="text-align: center;">~</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">free(ptr)</td>
+<td style="text-align: center;">tc_free(ptr)</td>
+<td style="text-align: center;">je_free(ptr)</td>
+<td style="text-align: center;">~</td>
+<td style="text-align: center;">~</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">zmalloc_size(p)</td>
+<td style="text-align: center;">tc_malloc_size(p)</td>
+<td style="text-align: center;">je_malloc_usable_size(p)</td>
+<td style="text-align: center;">malloc_usable_size(p)</td>
+<td style="text-align: center;">malloc_size(p)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zmalloc_sizep">zmalloc_size(p)</h3>
+<p>zmalloc_size(p)函数返回指针p通过以上内存分配函数分配到的内存大小。随后redis对malloc、calloc、realloc和free进行二次封装，主要是在调用这些函数时，对分配/释放的总内存进行记录。tcmalloc, jemalloc,libc和mac os实现的库都有类似的函数，具体对应上图。但是如果上述实现都不可用时，redis使用自己定义的zmalloc_size(p)函数： <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">size_t</span> <span class="title">zmalloc_size</span><span class="params">(<span class="keyword">void</span> *ptr)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">void</span> *realptr = (<span class="keyword">char</span>*)ptr-PREFIX_SIZE;</span><br><span class="line">    <span class="keyword">size_t</span> <span class="built_in">size</span> = *((<span class="keyword">size_t</span>*)realptr);</span><br><span class="line">    <span class="comment">/* Assume at least that all the allocations are padded at sizeof(long) by</span></span><br><span class="line"><span class="comment">     * the underlying allocator. */</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">size</span>&amp;(<span class="keyword">sizeof</span>(<span class="keyword">long</span>)<span class="number">-1</span>)) <span class="built_in">size</span> += <span class="keyword">sizeof</span>(<span class="keyword">long</span>)-(<span class="built_in">size</span>&amp;(<span class="keyword">sizeof</span>(<span class="keyword">long</span>)<span class="number">-1</span>));</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">size</span>+PREFIX_SIZE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> redis使用宏<code>HAVE_MALLOC_SIZE</code>标识这个函数是自定义的还是库自带的；如果定义了<code>HAVA_MALLOC_SIZE</code>，那么<code>PREFIX_SIZE</code>为0；如果没有定义，<code>PREFIX_SIZE</code>的值为<code>sizeof(size_t)</code>则分配内存时需要多分配<code>PREFIX_SIZE</code>的空间保存分配空间的大小。</p>
+<h3 id="redis中的内存记录">redis中的内存记录</h3>
+<p>redis使用一个全局变量<code>used_memory</code>记录已经分配的总内存，由于可能会有多个线程同时访问这个变量，因此redis对<code>used_memory</code>读写操作保证原子性。</p>
+<p>redis使用三种方式实现原子性，优先级依次递减（如果可用，优先使用<code>__atomic</code>宏实现，其次<code>__sync</code>宏，最后<code>pthread mutex</code>互斥锁），实现的具体方法在头文件<code>atomicvar.h</code>中，不同实现对应的操作如下：</p>
+<p>redis对这三种方式进行了封装，对外提供了统一的api：</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>redis api</th>
+<th>__atomic</th>
+<th>__sync</th>
+<th>pthread mutex</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>atomicIncr(var,count)</td>
+<td>__atomic_add_fetch(&amp;var, (count),__ATOMIC_RELAXED)</td>
+<td>__sync_add_and_fetch(&amp;var,(count))</td>
+<td>pthread_mutex_lock(&amp;var ## _mutex);<br>var += (count); <br> pthread_mutex_unlock(&amp;var ## _mutex);</td>
+</tr>
+<tr class="even">
+<td>atomicGetIncr(var, oldvalue_var, count)</td>
+<td>oldvalue_var=__atomic_add_fetch(&amp;var, (count),__ATOMIC_RELAXED);</td>
+<td>oldvalue_var = __sync_fetch_and_add(&amp;var,(count);</td>
+<td>pthread_mutex_lock(&amp;var ## _mutex);<br> oldvalue_var = var; <br>var += (count); <br>pthread_mutex_unlock(&amp;var ## _mutex);</td>
+</tr>
+<tr class="odd">
+<td>atomicDecr(var, count)</td>
+<td>__atomic_sub_fetch(&amp;var,(count),__ATOMIC_RELAXED)</td>
+<td>__sync_sub_and_fetch(&amp;var,(count))</td>
+<td>pthread_mutex_lock(&amp;var ## _mutex);<br>var -= (count);<br>pthread_mutex_unlock(&amp;var ## _mutex);</td>
+</tr>
+<tr class="even">
+<td>atomicGet(var, dstvar)</td>
+<td>dstvar=__atomic_load_n(&amp;var, __ATOMIC_RELAXED);</td>
+<td>dstvar = __sync_sub_and_fetch(&amp;var,0);</td>
+<td>pthread_mutex_lock(&amp;var ## _mutex);<br> dstvar = var;<br> pthread_mutex_unlock(&amp;var ## _mutex);</td>
+</tr>
+<tr class="odd">
+<td>atomicSet(var,value)</td>
+<td>__atomic_store_n(&amp;var, value, __ATOMIC_RELAXED)</td>
+<td>while(!__sync_bool_compare_and_swap(&amp;var,var,value));</td>
+<td>pthread_mutex_lock(&amp;var ## _mutex); <br>var = value; <br>pthread_mutex_unlock(&amp;var ## _mutex);</td>
+</tr>
+</tbody>
+</table>
+<h4 id="增加used_memory">增加<code>used_memory</code></h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> update_zmalloc_stat_alloc(__n) do &#123; \</span></span><br><span class="line">    <span class="keyword">size_t</span> _n = (__n); \</span><br><span class="line">    <span class="keyword">if</span> (_n&amp;(<span class="keyword">sizeof</span>(<span class="keyword">long</span>)<span class="number">-1</span>)) _n += <span class="keyword">sizeof</span>(<span class="keyword">long</span>)-(_n&amp;(<span class="keyword">sizeof</span>(<span class="keyword">long</span>)<span class="number">-1</span>)); \</span><br><span class="line">    atomicIncr(used_memory,__n); \</span><br><span class="line">&#125; <span class="keyword">while</span>(<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+<h4 id="减小used_memory">减小<code>used_memory</code></h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> update_zmalloc_stat_free(__n) do &#123; \</span></span><br><span class="line">    <span class="keyword">size_t</span> _n = (__n); \</span><br><span class="line">    <span class="keyword">if</span> (_n&amp;(<span class="keyword">sizeof</span>(<span class="keyword">long</span>)<span class="number">-1</span>)) _n += <span class="keyword">sizeof</span>(<span class="keyword">long</span>)-(_n&amp;(<span class="keyword">sizeof</span>(<span class="keyword">long</span>)<span class="number">-1</span>)); \</span><br><span class="line">    atomicDecr(used_memory,__n); \</span><br><span class="line">&#125; <span class="keyword">while</span>(<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+<h4 id="获取used_memory大小">获取<code>used_memory</code>大小</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">size_t</span> <span class="title">zmalloc_used_memory</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">size_t</span> um;</span><br><span class="line">    atomicGet(used_memory,um);</span><br><span class="line">    <span class="keyword">return</span> um;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="oom错误处理">OOM错误处理</h3>
+<p>redis定义一个函数指针用来处理，该函数指针默认值为： <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">zmalloc_default_oom</span><span class="params">(<span class="keyword">size_t</span> <span class="built_in">size</span>)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"zmalloc: Out of memory trying to allocate %zu bytes\n"</span>,</span><br><span class="line">        <span class="built_in">size</span>);</span><br><span class="line">    fflush(<span class="built_in">stderr</span>);</span><br><span class="line">    <span class="built_in">abort</span>();</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="title">void</span> <span class="params">(*zmalloc_oom_handler)</span><span class="params">(<span class="keyword">size_t</span>)</span> </span>= zmalloc_default_oom;</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line">redis提供给用户一个接口可以修改该默认值：</span><br><span class="line">```c</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">zmalloc_set_oom_handler</span><span class="params">(<span class="keyword">void</span> (*oom_handler)(<span class="keyword">size_t</span>))</span> </span>&#123;</span><br><span class="line">    zmalloc_oom_handler = oom_handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="zmallocsize_t-size">zmalloc(size_t size)</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">zmalloc</span><span class="params">(<span class="keyword">size_t</span> <span class="built_in">size</span>)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">void</span> *ptr = <span class="built_in">malloc</span>(<span class="built_in">size</span>+PREFIX_SIZE);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!ptr) zmalloc_oom_handler(<span class="built_in">size</span>);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> HAVE_MALLOC_SIZE</span></span><br><span class="line">    update_zmalloc_stat_alloc(zmalloc_size(ptr));</span><br><span class="line">    <span class="keyword">return</span> ptr;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    *((<span class="keyword">size_t</span>*)ptr) = <span class="built_in">size</span>;</span><br><span class="line">    update_zmalloc_stat_alloc(<span class="built_in">size</span>+PREFIX_SIZE);</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">char</span>*)ptr+PREFIX_SIZE;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="zcallocsize_t-size">zcalloc(size_t size)</h3>
+<p>redis定义的<code>zcalloc</code>只有一个参数，与<code>zmalloc(size_t size)</code>较为类似，但是该函数会分配的空间初始化。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"> <span class="function"><span class="keyword">void</span> *<span class="title">zcalloc</span><span class="params">(<span class="keyword">size_t</span> <span class="built_in">size</span>)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">void</span> *ptr = <span class="built_in">calloc</span>(<span class="number">1</span>, <span class="built_in">size</span>+PREFIX_SIZE);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!ptr) zmalloc_oom_handler(<span class="built_in">size</span>);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> HAVE_MALLOC_SIZE</span></span><br><span class="line">    update_zmalloc_stat_alloc(zmalloc_size(ptr));</span><br><span class="line">    <span class="keyword">return</span> ptr;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    *((<span class="keyword">size_t</span>*)ptr) = <span class="built_in">size</span>;</span><br><span class="line">    update_zmalloc_stat_alloc(<span class="built_in">size</span>+PREFIX_SIZE);</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">char</span>*)ptr+PREFIX_SIZE;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="zreallocvoid-ptr-size_t-size">zrealloc(void *ptr, size_t size)</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">zrealloc</span><span class="params">(<span class="keyword">void</span> *ptr, <span class="keyword">size_t</span> <span class="built_in">size</span>)</span> </span>&#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> HAVE_MALLOC_SIZE</span></span><br><span class="line">    <span class="keyword">void</span> *realptr;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    <span class="keyword">size_t</span> oldsize;</span><br><span class="line">    <span class="keyword">void</span> *newptr;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">size</span> == <span class="number">0</span> &amp;&amp; ptr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        zfree(ptr);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (ptr == <span class="literal">NULL</span>) <span class="keyword">return</span> zmalloc(<span class="built_in">size</span>);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> HAVE_MALLOC_SIZE</span></span><br><span class="line">    oldsize = zmalloc_size(ptr);</span><br><span class="line">    newptr = <span class="built_in">realloc</span>(ptr,<span class="built_in">size</span>);</span><br><span class="line">    <span class="keyword">if</span> (!newptr) zmalloc_oom_handler(<span class="built_in">size</span>);</span><br><span class="line"></span><br><span class="line">    update_zmalloc_stat_free(oldsize);</span><br><span class="line">    update_zmalloc_stat_alloc(zmalloc_size(newptr));</span><br><span class="line">    <span class="keyword">return</span> newptr;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    realptr = (<span class="keyword">char</span>*)ptr-PREFIX_SIZE;</span><br><span class="line">    oldsize = *((<span class="keyword">size_t</span>*)realptr);</span><br><span class="line">    newptr = <span class="built_in">realloc</span>(realptr,<span class="built_in">size</span>+PREFIX_SIZE);</span><br><span class="line">    <span class="keyword">if</span> (!newptr) zmalloc_oom_handler(<span class="built_in">size</span>);</span><br><span class="line"></span><br><span class="line">    *((<span class="keyword">size_t</span>*)newptr) = <span class="built_in">size</span>;</span><br><span class="line">    update_zmalloc_stat_free(oldsize+PREFIX_SIZE);</span><br><span class="line">    update_zmalloc_stat_alloc(<span class="built_in">size</span>+PREFIX_SIZE);</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">char</span>*)newptr+PREFIX_SIZE;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="zfreevoid-ptr">zfree(void *ptr)</h3>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">zfree</span><span class="params">(<span class="keyword">void</span> *ptr)</span> </span>&#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> HAVE_MALLOC_SIZE</span></span><br><span class="line">    <span class="keyword">void</span> *realptr;</span><br><span class="line">    <span class="keyword">size_t</span> oldsize;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ptr == <span class="literal">NULL</span>) <span class="keyword">return</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> HAVE_MALLOC_SIZE</span></span><br><span class="line">    update_zmalloc_stat_free(zmalloc_size(ptr));</span><br><span class="line">    <span class="built_in">free</span>(ptr);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    realptr = (<span class="keyword">char</span>*)ptr-PREFIX_SIZE;</span><br><span class="line">    oldsize = *((<span class="keyword">size_t</span>*)realptr);</span><br><span class="line">    update_zmalloc_stat_free(oldsize+PREFIX_SIZE);</span><br><span class="line">    <span class="built_in">free</span>(realptr);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="zstrdupconst-char-s">zstrdup(const char *s)</h3>
+<p>redis定义的字符串复制函数，注意多分配了一个'\0'空间。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">char</span> *<span class="title">zstrdup</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *s)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">size_t</span> l = <span class="built_in">strlen</span>(s)+<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">char</span> *p = zmalloc(l);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">memcpy</span>(p,s,l);</span><br><span class="line">    <span class="keyword">return</span> p;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+      
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="tag"><i class="fa fa-tag"></i> 内存管理</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/11/01/%E5%A0%86/" rel="prev" title="堆">
+      <i class="fa fa-chevron-left"></i> 堆
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/11/15/redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-sds/" rel="next" title="redis数据结构-sds">
+      redis数据结构-sds <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#zmalloc_sizep"><span class="nav-text">zmalloc_size(p)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#redis中的内存记录"><span class="nav-text">redis中的内存记录</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#增加used_memory"><span class="nav-text">增加used_memory</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#减小used_memory"><span class="nav-text">减小used_memory</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#获取used_memory大小"><span class="nav-text">获取used_memory大小</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#oom错误处理"><span class="nav-text">OOM错误处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#zmallocsize_t-size"><span class="nav-text">zmalloc(size_t size)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#zcallocsize_t-size"><span class="nav-text">zcalloc(size_t size)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#zreallocvoid-ptr-size_t-size"><span class="nav-text">zrealloc(void *ptr, size_t size)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#zfreevoid-ptr"><span class="nav-text">zfree(void *ptr)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#zstrdupconst-char-s"><span class="nav-text">zstrdup(const char *s)</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="leegen"
+      src="/images/xueren.jpg">
+  <p class="site-author-name" itemprop="name">leegen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimingWong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimingWong"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:leegener@foxmail.com" title="E-Mail → mailto:leegener@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">leegen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>
