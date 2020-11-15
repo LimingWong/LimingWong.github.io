@@ -23,9 +23,9 @@
   </script>
 
   <meta property="og:type" content="website">
-<meta property="og:title" content="leegen&#39;s blog">
+<meta property="og:title" content="M&amp;Y">
 <meta property="og:url" content="https://github.com/LimingWong/index.html">
-<meta property="og:site_name" content="leegen&#39;s blog">
+<meta property="og:site_name" content="M&amp;Y">
 <meta property="og:locale" content="en_US">
 <meta property="article:author" content="leegen">
 <meta name="twitter:card" content="summary">
@@ -43,7 +43,7 @@
   };
 </script>
 
-  <title>leegen's blog</title>
+  <title>M&Y</title>
   
 
 
@@ -94,7 +94,7 @@
 
     <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
-      <h1 class="site-title">leegen's blog</h1>
+      <h1 class="site-title">M&Y</h1>
       <span class="logo-line-after"><i></i></span>
     </a>
       <p class="site-subtitle" itemprop="description">是哪个小可爱在看我 :)</p>
@@ -178,7 +178,7 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -194,7 +194,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-11-15 21:38:40 / Modified: 22:16:52" itemprop="dateCreated datePublished" datetime="2020-11-15T21:38:40+08:00">2020-11-15</time>
+              <time title="Created: 2020-11-15 21:38:40 / Modified: 22:31:57" itemprop="dateCreated datePublished" datetime="2020-11-15T21:38:40+08:00">2020-11-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -221,17 +221,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>redis的字典是很多上层数据类型的底层实现之一。它的设计很有特点，最大的特点就是使用两张哈希表实现渐进式的rehash。</p>
-<h3 id="dictdictht和dictentry">dict,dictht和dictEntry</h3>
-<p>dictEntry是存储key-value对的基本存储单元，它的定义为： <!-- ![](/images/redis/dictentry.png) --> <img src="/images/redis/dictentry.png" width="50%" height="50%"></p>
-<p>key是一个指针，指向任何类型的数据；v是一个联合体，可以是val指针，也可以是64位整型s64或者浮点数d。还包含一个dictEntry指针，这个指针是指向下一个相同索引值的entry的。所以可见redis使用链地址法解决哈希冲突。</p>
-<p>dictht是一张哈希表，它的定义如下: <!-- ![](/images/redis/dictht.png) --> <img src="/images/redis/dictht.png" width="50%" height="50%"><br />
-table是一个dictentry数组，size是数组的大小（bucket的个数），used是数组中一共有多少个entry，sizemask等于size-1，是用来计算新插入的entry在table中的索引的。</p>
-<p>dict 是顶层的数据结构，它的定义为： <!-- ![](/images/redis/dict.png) --> <img src="/images/redis/dict.png" width="50%" height="50%"><br />
-dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时候，ht[1]为空，ht[0]存放数据。ht[1]是辅助rehashing的。rehashidx变量用来记录当前rehashing的ht[0]中的索引，表示了进度。没有进行rehashing时，其值为-1。type记录了一些操作的函数。iterator记录安全迭代器的数量。安全迭代器指在有安全迭代器存在时不会进行rehashing操作，可以使用安全迭代器进行增加、删除等操作；如果使用不安全迭代器，则只能进行读操作。</p>
-<p>dictType类型：<br />
-<!-- ![](/images/redis/dicttype.png) --> !<img src="/images/redis/dicttype.png" width = "50%" height="50%"></p>
-
+          <p>redis的字典是很多上层数据类型的底层实现之一。它的设计很有特点，最大的特点就是使用两张哈希表实现渐进式的rehash。
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/11/15/redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E5%AD%97%E5%85%B8/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -259,7 +257,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -275,7 +273,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-11-15 19:11:39 / Modified: 20:20:05" itemprop="dateCreated datePublished" datetime="2020-11-15T19:11:39+08:00">2020-11-15</time>
+              <time title="Created: 2020-11-15 19:11:39 / Modified: 22:32:06" itemprop="dateCreated datePublished" datetime="2020-11-15T19:11:39+08:00">2020-11-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -302,10 +300,15 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>sds本质是一个<code>typedef</code>来的<code>char*</code>指针，使用时，它指向实际的数据(buf[]数组的头地址)。redis在创建sds时，会同时创建相应的header。header中包含了四个属性：len记录sds已经使用的空间，因此程序可以以O(1)的时间复杂度获得数据的大小；alloc记录分配的空间，不包括header的长度和\0结束符；flags标识header的类型，buf[]数组为sds实际的数据。</p>
-<p>redis定义了5种header：sdshdr5,sdshdr8,sdshdr16,sdshdr32,sds64。sdshdr5不会使用。创建sds时，api函数会根据创建空间的大小来选择不同的header。</p>
-<p>sds二进制安全的字符串类型，它使用header中的len标识sds的长度而不是根据'\0'判断。当然为了保持部分的兼容性，redis也会在sds的末尾加上'\0'。所有sds api都会以处理二进制的方式来处理sds存放在buf数组里面的数据，程序不会对其中的数据做任何限制、过滤或者假设，数据在写入时是什么样，它被读取时就是什么样。</p>
-
+          <p>sds本质是一个<code>typedef</code>来的<code>char*</code>指针，使用时，它指向实际的数据(buf[]数组的头地址)。redis在创建sds时，会同时创建相应的header。header中包含了四个属性：len记录sds已经使用的空间，因此程序可以以O(1)的时间复杂度获得数据的大小；alloc记录分配的空间，不包括header的长度和\0结束符；flags标识header的类型，buf[]数组为sds实际的数据。
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/11/15/redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-sds/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -333,7 +336,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -415,7 +418,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -499,7 +502,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -581,7 +584,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -662,7 +665,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -751,7 +754,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -842,7 +845,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
@@ -923,7 +926,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="leegen's blog">
+      <meta itemprop="name" content="M&Y">
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
