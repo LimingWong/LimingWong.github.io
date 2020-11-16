@@ -33,8 +33,9 @@
 <meta property="og:image" content="https://github.com/images/redis/dictht.png">
 <meta property="og:image" content="https://github.com/images/redis/dict.png">
 <meta property="og:image" content="https://github.com/images/redis/dicttype.png">
+<meta property="og:image" content="https://github.com/images/redis/normal-dict.png">
 <meta property="article:published_time" content="2020-11-15T13:38:40.000Z">
-<meta property="article:modified_time" content="2020-11-15T14:31:57.954Z">
+<meta property="article:modified_time" content="2020-11-16T03:27:30.106Z">
 <meta property="article:author" content="leegen">
 <meta property="article:tag" content="字典">
 <meta property="article:tag" content="哈希表">
@@ -203,10 +204,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-11-15 21:38:40 / Modified: 22:31:57" itemprop="dateCreated datePublished" datetime="2020-11-15T21:38:40+08:00">2020-11-15</time>
+              <time title="Created: 2020-11-15 21:38:40" itemprop="dateCreated datePublished" datetime="2020-11-15T21:38:40+08:00">2020-11-15</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-16 11:27:30" itemprop="dateModified" datetime="2020-11-16T11:27:30+08:00">2020-11-16</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -248,6 +255,36 @@ table是一个dictentry数组，size是数组的大小（bucket的个数），us
 dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时候，ht[1]为空，ht[0]存放数据。ht[1]是辅助rehashing的。rehashidx变量用来记录当前rehashing的ht[0]中的索引，表示了进度。没有进行rehashing时，其值为-1。type记录了一些操作的函数。iterator记录安全迭代器的数量。安全迭代器指在有安全迭代器存在时不会进行rehashing操作，可以使用安全迭代器进行增加、删除等操作；如果使用不安全迭代器，则只能进行读操作。</p>
 <p>dictType类型：<br />
 <!-- ![](/images/redis/dicttype.png) --> !<img src="/images/redis/dicttype.png" width = "50%" height="50%"></p>
+<p>因此，一个没有进行rehashing操作的字典结构如下： <img src="/images/redis/normal-dict.png" /></p>
+<h3 id="哈希函数">哈希函数</h3>
+<p>默认的哈希函数是定义在<code>siphash.c</code>中的SimpHash哈希函数。一个key在哈希表中的索引计算公式如下：<br />
+<span class="math display">\[
+index = hashfunction(key) \&amp; (size -1)
+\]</span><br />
+如果多个key计算得到的index是相同的，那么就说发生了哈希冲突。redis使用链地址法处理哈希冲突，即相同index的entry使用链表链接起来。最后加入的entry添加到表头的位置，复杂度为O(1)（认为最后加入的entry最近访问的可能性最大。时间局部性原理。）</p>
+<h3 id="渐进式rehash">渐进式rehash</h3>
+<p>哈希表的复杂因子定义为：<br />
+<span class="math display">\[
+负载因子=ht.used / ht.size
+\]</span></p>
+<h4 id="扩展操作">扩展操作</h4>
+<p>进行rehash的操作与该负载因子有直接的关系，当满足下列关系之一时，哈希表进行扩展操作:</p>
+<ul>
+<li><p>服务器目前没有在执行BGSAVE或者BGREWRITEAOF命令（都是异步命令，会创建子进程），同时负载因子大于等于1；</p></li>
+<li><p>服务器目前正在执行BGSAVE或者BGREWRITEAOF命令，同时负载因子大于等于5</p></li>
+</ul>
+<p>note：redis设置了一个字典是否可以进行rehashing的标志<code>dict_can_size</code>，是一个全局的设置，所有字典都受限制。如果等于1，则可以进行rehashing，如果等于0，则不可以进行rehashing。但是如果负载因子大于等于5可以强制rehasing，不受该标志制约。字典在进行任何添加元素操作的时候，都会检查是否需要进行rehashing，如果需要就执行<code>dictExpand</code>函数扩展ht[1]的大小，同时设置<code>rehashidex</code>为0，将此哈希表设置为正在进行rehashing，具体实现： <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Expand the hash table if needed */</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">int</span> _dictExpandIfNeeded(dict *d)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">/* Incremental rehashing already in progress. Return. */</span></span><br><span class="line">    <span class="keyword">if</span> (dictIsRehashing(d)) <span class="keyword">return</span> DICT_OK;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* If the hash table is empty expand it to the initial size. */</span></span><br><span class="line">    <span class="keyword">if</span> (d-&gt;ht[<span class="number">0</span>].<span class="built_in">size</span> == <span class="number">0</span>) <span class="keyword">return</span> dictExpand(d, DICT_HT_INITIAL_SIZE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* If we reached the 1:1 ratio, and we are allowed to resize the hash</span></span><br><span class="line"><span class="comment">     * table (global setting) or we should avoid it but the ratio between</span></span><br><span class="line"><span class="comment">     * elements/buckets is over the "safe" threshold, we resize doubling</span></span><br><span class="line"><span class="comment">     * the number of buckets. */</span></span><br><span class="line">    <span class="keyword">if</span> (d-&gt;ht[<span class="number">0</span>].used &gt;= d-&gt;ht[<span class="number">0</span>].<span class="built_in">size</span> &amp;&amp;</span><br><span class="line">        (dict_can_resize ||</span><br><span class="line">         d-&gt;ht[<span class="number">0</span>].used/d-&gt;ht[<span class="number">0</span>].<span class="built_in">size</span> &gt; dict_force_resize_ratio))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> dictExpand(d, d-&gt;ht[<span class="number">0</span>].used*<span class="number">2</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> DICT_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可见，如果字典d原本为空，则扩展到默认值（size = 4）；如果d不为空且满足扩展条件，则扩展到大于<code>used*2</code>的第一个2的幂次数。</p>
+<p>所谓渐进式rehash，是指redis不会一次性完成整个rehas过程，而是将rehash操作分散到添加、删除、查找等操作中，这样就将rehashing的工作量平摊到每一次操作中，不会导致服务器因为大量的rehash操作暂停服务。<br />
+redis提供两种渐进式rehash：分步rehash和分时间片rehash。分布rehash指每次进行一步rehash，一步rehash包括执行一个bucket的操作，但是不保证成功；分时间片rehash指每次执行固定时间的rehash。</p>
+<h4 id="收缩操作">收缩操作</h4>
+<!-- TODO -->
+<p>当负载因子小于0.1时，字典自动进行收缩操作。字典提供一个api给用户，用户可以将哈希表的大小调整到entry数量的（used）：即将哈希表的负载因子调整到1附近：<br />
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/* Resize the table to the minimal size that contains all the elements,</span></span><br><span class="line"><span class="comment"> * but with the invariant of a USED/BUCKETS ratio near to &lt;= 1</span></span><br><span class="line"><span class="comment"> * 缩小哈希表的大小到最小，但是包含所有的元素，同时保证负载因子近似小于等于1.</span></span><br><span class="line"><span class="comment"> * T = O(N)</span></span><br><span class="line"><span class="comment"> *  */</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">dictResize</span><span class="params">(dict *d)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> minimal;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!dict_can_resize || dictIsRehashing(d)) <span class="keyword">return</span> DICT_ERR;</span><br><span class="line">    minimal = d-&gt;ht[<span class="number">0</span>].used;</span><br><span class="line">    <span class="keyword">if</span> (minimal &lt; DICT_HT_INITIAL_SIZE)</span><br><span class="line">        minimal = DICT_HT_INITIAL_SIZE;</span><br><span class="line">    <span class="keyword">return</span> dictExpand(d, minimal);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="reference">reference</h3>
+<ul>
+<li>《redis设计与实现》</li>
+</ul>
 
     </div>
 
@@ -332,6 +369,7 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#哈希函数"><span class="nav-text">哈希函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#渐进式rehash"><span class="nav-text">渐进式rehash</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#扩展操作"><span class="nav-text">扩展操作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#收缩操作"><span class="nav-text">收缩操作</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reference"><span class="nav-text">reference</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -481,6 +519,59 @@ dict中有两张哈希表：ht[0]和ht[1]，在没有进行rehashing操作的时
   
 
   
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
 
   
 
