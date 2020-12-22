@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/blog.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/blog.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/blog.png">
+  <link rel="mask-icon" href="/images/blog.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-big-counter.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"KWFE73CESY","apiKey":"5438c68878ca12b68378b626910ca2bf","indexName":"blog_search","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="非阻塞I&#x2F;O 非阻塞I&#x2F;O使我们可以发出open，read和write这样的I&#x2F;O操作，并使这些操作不会永远阻塞。如果这种操作不能完成，则调用立即出错返回，表示该操作如继续执行将阻塞。 对于一个给定的操作符，有两种为其指定非阻塞I&#x2F;O的方法。  如果调用open获得描述符，则可指定O_NONBLOCK标志 对于已经打开的一个描述符，则可调用fcntl，由该函数打开O_NONBLOCK文件">
+<meta property="og:type" content="article">
+<meta property="og:title" content="select, poll和epoll">
+<meta property="og:url" content="https://github.com/LimingWong/2020/12/15/select-poll%E5%92%8Cepoll/index.html">
+<meta property="og:site_name" content="M&amp;Y">
+<meta property="og:description" content="非阻塞I&#x2F;O 非阻塞I&#x2F;O使我们可以发出open，read和write这样的I&#x2F;O操作，并使这些操作不会永远阻塞。如果这种操作不能完成，则调用立即出错返回，表示该操作如继续执行将阻塞。 对于一个给定的操作符，有两种为其指定非阻塞I&#x2F;O的方法。  如果调用open获得描述符，则可指定O_NONBLOCK标志 对于已经打开的一个描述符，则可调用fcntl，由该函数打开O_NONBLOCK文件">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://github.com/images/unix/poll.png">
+<meta property="article:published_time" content="2020-12-15T01:04:52.000Z">
+<meta property="article:modified_time" content="2020-12-22T01:33:55.045Z">
+<meta property="article:author" content="leegen">
+<meta property="article:tag" content="IO多路复用">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/images/unix/poll.png">
+
+<link rel="canonical" href="https://github.com/LimingWong/2020/12/15/select-poll%E5%92%8Cepoll/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>select, poll和epoll | M&Y</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">M&Y</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">是哪个小可爱在看我 :)</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/12/15/select-poll%E5%92%8Cepoll/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xueren.jpg">
+      <meta itemprop="name" content="leegen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="M&Y">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          select, poll和epoll
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-12-15 09:04:52" itemprop="dateCreated datePublished" datetime="2020-12-15T09:04:52+08:00">2020-12-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-12-22 09:33:55" itemprop="dateModified" datetime="2020-12-22T09:33:55+08:00">2020-12-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="非阻塞io">非阻塞I/O</h2>
+<p>非阻塞I/O使我们可以发出open，read和write这样的I/O操作，并使这些操作不会永远阻塞。如果这种操作不能完成，则调用立即出错返回，表示该操作如继续执行将阻塞。</p>
+<p>对于一个给定的操作符，有两种为其指定非阻塞I/O的方法。</p>
+<ol type="1">
+<li>如果调用open获得描述符，则可指定O_NONBLOCK标志</li>
+<li>对于已经打开的一个描述符，则可调用fcntl，由该函数打开O_NONBLOCK文件状态标志。</li>
+</ol>
+<a id="more"></a>
+<h2 id="io多路复用">I/O多路复用</h2>
+<p>IO多路复用技术就是先构造一张我们感兴趣的描述符列表，然后调用一个函数，知道这些描述符中的至少一个只能准备好进行IO时，该函数才返回。</p>
+<p>常见的IO多路复用技术有：select，poll和epoll。</p>
+<h2 id="select">select</h2>
+<p>select函数的原型为：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/select.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">//若成功返回准备就绪的描述符数量，如果超时，返回0，如果出错，返回-1</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">select</span><span class="params">(<span class="keyword">int</span> maxfd, fd_set *<span class="keyword">restrict</span> readfds, fd_set *<span class="keyword">restrict</span> writefds, fd_set *<span class="keyword">restrict</span> exceptfds, struct timeval *<span class="keyword">restrict</span> tvptr)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>最后一个参数指定该函数愿意等待的时间长度，单位为秒和微秒，有以下三种情况：</p>
+<ul>
+<li>tvptr == NULL</li>
+</ul>
+<p>永远等待。如果捕捉到一个信号则中断此无限期等待。当所指定的描述符中的一个已准备好或捕捉到一个信号则返回。如果捕捉到一个信号，则select返回-1，errno设置为EINTR.</p>
+<ul>
+<li>tvptr-&gt;tv_sec == 0 &amp;&amp; tvptr-&gt;tv_usec == 0</li>
+</ul>
+<p>根本不等待。测试所有指定的描述符并立即返回。这是轮询系统找到多个描述符状态而不阻塞select函数的方法</p>
+<ul>
+<li>tvptr-&gt;tv_sec ！= 0 || tvptr-&gt;tv_usec ！= 0</li>
+</ul>
+<p>等待指定的秒数和微秒数。当指定的描述符之一已准备好，或当指定的时间值已经超过时立即返回。如果在超时到期时还没有一个描述符准备好，则返回值是0。如果没到指定的时间，但是指定的描述符已准备好，tvptr会被更新为剩余的时间。</p>
+<p>中间三个参数是指向描述符集的指针。每个描述符集存储在一个fd_set数据类型中，它可以为每一个可能的描述符保持一位。</p>
+<p>对于fd_set数据类型，只可以进行以下的几种操作：</p>
+<ul>
+<li>分配一个这种类型的变量</li>
+<li>将这种类型的一个变量值赋给同类型的另一个变量</li>
+<li>对这种类型的变量使用下列4个函数中的一个： <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/select.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">//如果fd在描述符集中，返回非0值；否则返回0</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">FD_ISSET</span><span class="params">(<span class="keyword">int</span> fd, fd_set *fdset)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_CLR</span><span class="params">(<span class="keyword">int</span> fd, fd_set *fdset)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_SET</span><span class="params">(<span class="keyword">int</span> fd, fd_set *fdset)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_ZERO</span><span class="params">(fd_set *fdset)</span></span>;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>调用FD_ZERO将一个fd_set变量的所有位设置为0。要开启描述符集中的一位，可以调用FD_SET。调用FD_CLR可以清除一位。最后，可以调用FD_ISSET测试描述符集中的一个指定位是否已打开。</p>
+<p>在声明了一个描述符集之后，必须用FD_ZERO将一个fd_set变量的所有位设置为0.然后调用FD_SET设置我们关心的各个描述符的位。调用FD_CLR可以清除一位。从select返回时，可以用FD_ISSET测试该集中的一个给定位是否仍处于打开状态。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">fd_set rset;</span><br><span class="line"><span class="keyword">int</span> fd;</span><br><span class="line">FD_ZERO(&amp;rset);</span><br><span class="line">FD_SET(fd, &amp;rset);</span><br><span class="line">FD_SET(STDIN_FILENO, &amp;rset);</span><br></pre></td></tr></table></figure>
+<p>select中的三个参数任意一个都可以是空指针，这表示对相应条件并不关心。如果所有三个指针都是NULL，则select提供了比sleep更精确的定时器。</p>
+<p>select第一个参数maxfd的意思是最大文件描述符编号值加1。</p>
+<p>若select函数返回一个正值，说明一些描述符已经准备好，对于准备好，有以下含义：</p>
+<ul>
+<li>若对读集中的一个描述符进行read操作不会阻塞，则认为此描述符是准备好的。</li>
+<li>若对写集中的一个描述符进行write操作不会阻塞，则认为此描述符是准备好的。</li>
+<li>若对异常条件集中的一个描述符有一个未决异常条件，则认为此描述符是准备好的。</li>
+<li>对于读、写和异常条件，普通文件的文件描述符总是返回准备好</li>
+</ul>
+<p>一个描述符阻塞与否并不影响select是否阻塞，也就是说，如果希望读一个非阻塞描述符，并且以超时值为5秒调用select，则select最多阻塞5s。如果指定一个无限的超时值，则在该描述符数据准备好，或捕捉到一个信号之前，select会一直阻塞。</p>
+<p>如果在一个描述符上碰到了文件尾端，则select会认为该描述符是可读的。然后调用read，它返回0，这是UNIX系统指示到达文件尾端的方法。</p>
+<h2 id="poll">poll</h2>
+<p>poll函数原型：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;poll.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">//如果成功返回准备就绪的描述符数目，若超市，返回0，若出错，返回-1</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">poll</span><span class="params">(struct pollfd fdarray[], <span class="keyword">nfds_t</span> nfds, <span class="keyword">int</span> timeout)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>poll构造一个pollfd数组，每个数组元素指定一个描述编号以及我们对该描述感兴趣的条件。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">pollfd</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> fd;  <span class="comment">//感兴趣的fd，如果小于0就忽略</span></span><br><span class="line">    short events;<span class="comment">//在fd感兴趣的时间</span></span><br><span class="line">    short revents;<span class="comment">//在fd上面发生的事件</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>fdarray的大小由nfds指定。</p>
+<p>poll的events和revents标志见下表：</p>
+<p><img src="/images/unix/poll.png" /></p>
+<p>当一个描述符被挂断（POLLHUP)后，就不能再写该描述符，但是可能仍然可以从该描述符读取到数据。</p>
+<p>poll最后一个参数指定我们可以等待的时间（毫秒）。有三种情形：</p>
+<ul>
+<li>timeout == -1 永远等待。</li>
+<li>timeout == 0 不等待。测试所有描述符并立即返回。这是一种轮询系统的方法，可以找到多个描述符的装填而不阻塞poll函数</li>
+<li>timeout &gt; 0 等待timeout毫秒。当指定的描述符之一已准备好，或timeout到期时立即返回。如果timeout到期时还没有一个描述符准备好，则返回值为0。</li>
+</ul>
+<p>文件尾端和挂断是不同的。如果从终端输入数据，并键入文件结束符，那么就会打开POLLIN，于是就可以读文件结束指示（read返回0）。revents中的POLLHUP没有打开。如果正在读调制解调器，并且电话线已挂断，我们将接到POLLHUP通知。</p>
+<p>与select一样，一个描述符是否阻塞不会影响poll是否阻塞。</p>
+<h2 id="epoll">epoll</h2>
+<p>epoll由三个函数构成：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/epoll.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> &#123;</span></span><br><span class="line">  <span class="keyword">uint32_t</span> events;</span><br><span class="line">  <span class="keyword">epoll_data_t</span> data;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">union</span> epoll_data &#123;</span><br><span class="line">  <span class="keyword">void</span> *ptr;</span><br><span class="line">  <span class="keyword">int</span> fd;</span><br><span class="line">  <span class="keyword">uint32_t</span> u32;</span><br><span class="line">  <span class="keyword">uint64_t</span> u64;</span><br><span class="line">&#125; <span class="keyword">epoll_data_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建一个epoll实例。返回epoll实例的文件描述符。</span></span><br><span class="line"><span class="comment">// size参数时给内核一个提示，表示该epoll实例管理的文件描述符的数量(现在已经弃用，内核会忽略这个参数)</span></span><br><span class="line"><span class="comment">// 这个函数返回的文件描述符用来表示创建的epoll实例，最后应该用close（）函数关闭。</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_create</span><span class="params">(<span class="keyword">int</span> <span class="built_in">size</span>)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//当flag == 0时，与epoll_create()函数一样</span></span><br><span class="line"><span class="comment">//当flag == EPOLL_CLOEXEC时，会将返回的文件描述符标记为FD_CLOEXEC</span></span><br><span class="line"><span class="comment">//当flag==EPOLL_NONBLOCK时，将返回的文件描述符设置为非阻塞。</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_create</span><span class="params">(<span class="keyword">int</span> flag)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//注册需要监听的事件，epfd就是epoll_create返回的fd</span></span><br><span class="line"><span class="comment">// op表示操作值，有三个操作类型：</span></span><br><span class="line"><span class="comment">// EPOLL_CTL_ADD:注册目标fd到epfd中，同时关联内部event到fd上</span></span><br><span class="line"><span class="comment">// EPOLL_CTL_MOD:修改已经注册到fd的监听事件</span></span><br><span class="line"><span class="comment">// EPOLL_CTL_DEL:从epfd中删除已经注册的fd，event可以被忽略也可以为NULL</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_ctl</span><span class="params">(<span class="keyword">int</span> epfd, <span class="keyword">int</span> op, in fd, struct epoll_event *ev)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// epfd是epoll_create返回的文件描述符，events用于接收已经准备好的事件，maxevents告诉内核events有多大，必须大于0，timeout含义与poll相同，返回值是准备好的事件数量</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_wait</span><span class="params">(<span class="keyword">int</span> epfd, struct epoll_event events, <span class="keyword">int</span> maxevents, <span class="keyword">int</span> timeout)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>epoll_event结构体中的events可以是如下值：</p>
+<ul>
+<li>EPOLLIN：表示关联的fd可以进行读操作了</li>
+<li>EPOLLOUT：表示关联的fd可以进行写操作了</li>
+<li>EPOLLRDHUP：表示套接字关闭了连接，或者关闭了正写一半的连接</li>
+<li>EPOLLPRI：表示关联的fd有紧急优先事件可以进行读操作了</li>
+<li>EPOLLERR：表示关联的fd发生了错误，epoll_wait会一直等待这个事件，一般没有必要设置这个属性</li>
+<li>EPOLLHUP：表示关联的fd挂起了，epoll_wait会一直等待这个事件，一般没有必要设置这个属性</li>
+<li>EPOLLET：设置关联的fd为ET（沿触发）的工作方式，epoll默认的工作方式是LT(电平触发)</li>
+<li>EPOLLONESHOT：设置关联的fd为oneshot的工作方式。表示只监听一次事件，如果要再次监听，需要把对应的socket再次放到epoll队列里面（这种工作方式可以保证一个线程处理期间，不会有其他线程处理同一个socket。因为一旦处理，epoll就不会再检测这个socket上的事件）。</li>
+</ul>
+<h3 id="epoll的lt和et模式">epoll的LT和ET模式</h3>
+<p>epoll对文件描述符的操作有两种模式：LT(Level Trigger， 电平触发)模式和ET(Edge Trigger, 边沿触发)模式。LT模式是默认的工作模式，这种模式下的epoll相当于一个效率较高的poll。当往epoll内核时间表中注册一个文件描述符上的EPOLLET事件时，epoll将以ET模式来操作该文件描述符。ET模式是epoll的高效工作模式。</p>
+<p>对于采用LT工作模式的文件描述符，当epoll_wait检测到其上有事件发生并将此事件通知应用程序后，应用程序可以不立即处理该事件。这样，当应用程序下一次调用epoll_wait时，epoll_wait还会再次向应用程序通知此事件，知道该事件被处理。而对于采用ET工作模式的文件描述符，当epoll_wait检测到其上有事件发生并将此事件通知应用程序后，应用程序必须立即处理该事件，因为后续的epoll_wait调用将不再向应用程序通知这一事件。可见，ET模式在很大成都上降低了同一个epoll事件被重复触发的次数，因此效率要比LT模式高。</p>
+
+    </div>
+
+    
+    
+    
+      
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" rel="tag"><i class="fa fa-tag"></i> IO多路复用</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/12/09/socket%E5%87%BD%E6%95%B0/" rel="prev" title="socket函数">
+      <i class="fa fa-chevron-left"></i> socket函数
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/12/16/%E5%A4%9A%E7%A7%8DIO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%8A%80%E6%9C%AF%E7%9A%84%E5%AF%B9%E6%AF%94/" rel="next" title="多种IO多路复用技术的对比">
+      多种IO多路复用技术的对比 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#非阻塞io"><span class="nav-text">非阻塞I&#x2F;O</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#io多路复用"><span class="nav-text">I&#x2F;O多路复用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#select"><span class="nav-text">select</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#poll"><span class="nav-text">poll</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#epoll"><span class="nav-text">epoll</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#epoll的lt和et模式"><span class="nav-text">epoll的LT和ET模式</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="leegen"
+      src="/images/xueren.jpg">
+  <p class="site-author-name" itemprop="name">leegen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimingWong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimingWong"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:leegener@foxmail.com" title="E-Mail → mailto:leegener@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">leegen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

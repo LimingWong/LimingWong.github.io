@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/blog.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/blog.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/blog.png">
+  <link rel="mask-icon" href="/images/blog.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-big-counter.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"KWFE73CESY","apiKey":"5438c68878ca12b68378b626910ca2bf","indexName":"blog_search","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Unix I&#x2F;O是什么 将所有的I&#x2F;O设备模型化为文件，所有的输入和输出都被当做对相应的文件的读和写来执行。这种将设备映射为文件的方式，允许Linux内核引出一个简单、低级的应用接口，称为Unix I&#x2F;O。这使得所有的输入和输出都能以一种统一且一致的方式来执行：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Unix I&#x2F;O">
+<meta property="og:url" content="https://github.com/LimingWong/2020/11/25/Unix-I-O/index.html">
+<meta property="og:site_name" content="M&amp;Y">
+<meta property="og:description" content="Unix I&#x2F;O是什么 将所有的I&#x2F;O设备模型化为文件，所有的输入和输出都被当做对相应的文件的读和写来执行。这种将设备映射为文件的方式，允许Linux内核引出一个简单、低级的应用接口，称为Unix I&#x2F;O。这使得所有的输入和输出都能以一种统一且一致的方式来执行：">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-11-25T15:02:45.000Z">
+<meta property="article:modified_time" content="2020-12-15T01:25:39.803Z">
+<meta property="article:author" content="leegen">
+<meta property="article:tag" content="I&#x2F;O">
+<meta property="article:tag" content="Linux">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://github.com/LimingWong/2020/11/25/Unix-I-O/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Unix I/O | M&Y</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">M&Y</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">是哪个小可爱在看我 :)</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/25/Unix-I-O/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xueren.jpg">
+      <meta itemprop="name" content="leegen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="M&Y">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Unix I/O
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-11-25 23:02:45" itemprop="dateCreated datePublished" datetime="2020-11-25T23:02:45+08:00">2020-11-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-12-15 09:25:39" itemprop="dateModified" datetime="2020-12-15T09:25:39+08:00">2020-12-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="unix-io是什么">Unix I/O是什么</h2>
+<p>将所有的I/O设备模型化为文件，所有的输入和输出都被当做对相应的文件的读和写来执行。这种将设备映射为文件的方式，允许Linux内核引出一个简单、低级的应用接口，称为Unix I/O。这使得所有的输入和输出都能以一种统一且一致的方式来执行：<br />
+<a id="more"></a></p>
+<ul>
+<li>打开文件：应用调用系统接口，系统返回一个非负整数，叫做文件描述符。用户只需要记住这个文件描述符便可以对该文件执行操作。</li>
+<li>Linux shell创建的每个进程开始时都有三个打开的文件：标准输入（描述符为0）、标准输出（描述符为1）和标准错误（描述符为2）。在头文件&lt;unistd.h&gt;中定义了常量STDIN_FILENO,STDOUT_FILENO和STDERR_FILENO。它们可以代替显示的描述符。</li>
+<li>改变当前的文件位置：对于每个打开的文件，系统都会记录一个文件的当前位置k，初始值为0.用户可以通过seek函数改变文件的当前位置。</li>
+<li>读写文件：读操作是从文件复制n&gt;0个字节到内存，从当前位置k开始，然后将k增大到k+n。如果读操作的k超过了文件的大小，就会触发一个EOF条件。在文件的结尾处并没有明确的EOF符号；写操作是从内存复制n&gt;0个字节到文件，从当前位置开始，然后更新k。</li>
+<li>关闭文件：当应用不再访问文件，通知内核关闭文件。文件会释放文件打开时创建的数据结构，并将描述符恢复到可用的描述符池中。无论一个进程因为什么原因终止时，内核都会关闭所有打开的文件并且释放他们的资源</li>
+</ul>
+<h2 id="打开和关闭文件特指使用unix-io方式">打开和关闭文件（特指使用Unix I/O方式）</h2>
+<p>进程通过调用open函数打开一个已经存在或者创建一个新文件： <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">open</span><span class="params">(<span class="keyword">char</span> *path, <span class="keyword">int</span> flags,... <span class="comment">/* mode_t mode */</span>)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">openat</span><span class="params">(<span class="keyword">int</span> fd, <span class="keyword">const</span> <span class="keyword">char</span> *path, <span class="keyword">int</span> flags, ... <span class="comment">/* mode_t mode */</span>)</span></span></span><br></pre></td></tr></table></figure> 函数会打开文件并将path转换成文件描述符，并且返回描述符数字。返回的描述赋总是在进程中当前没有打开的最小描述符。flags参数指明了进程如何打算访问这些文件，下面五个常量中必须指定一个且只能指定一个：</p>
+<ul>
+<li>O_RDONLY:只读</li>
+<li>O_WRONLY:只写</li>
+<li>O_RDWR:可读可写<br />
+</li>
+<li>O_EXEC:只执行打开</li>
+<li>O_SEARCH:只搜索打开（没有实现）</li>
+</ul>
+<p>flags参数可以是多个掩码的或，为写操作提供一些额外的指示，下面的常量是可选的：</p>
+<ul>
+<li>O_CREAT：如果文件不存在，就创建它，使用此选项时，open函数需要同时说明第三个参数mode指定该新文件的访问权限位。</li>
+<li>O_TRUNC：如果文件已经存在而且为只写或读-写打开，就截断它（清空）</li>
+<li>O_APPNED：在每次写操作前，设置文件位置到文件的结尾处<br />
+</li>
+<li>O_DIRECTORY:如果filename引用的不是目录，则出错</li>
+<li>O_EXCL:如果同时指定了O_CREAT，而文件已经存在，则出错。用此可以测试一个文件是否存在，如果不存在，则创建此我呢见，这使测试和创建两者成为一个原子操作。</li>
+<li>O_NOFOLLOW:如果filename引用的是一个符号链接，则出错。</li>
+<li>O_SYNC:使每次write等待物理I/O操作完成，包括由该write操作引起的文件属性更新所需的I/O</li>
+<li>O_NONBLOCK:如果path引用的是一个FIFO,一个块特殊文件或一个字符特殊文件，则此选项为文件的本次打开操作和后续的I/O操作设置非阻塞方式。</li>
+</ul>
+<p>mode参数可以用来给新文件（如果文件已经存在，该设置无效）设置访问权限位。这些位的含意见下表：</p>
+<table>
+<thead>
+<tr class="header">
+<th>掩码</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>S_IRUSR<BR>S_IWUSR<BR>S_IXUSR</td>
+<td>拥有者可读<br>拥有者可写<br>拥有者可执行</td>
+</tr>
+<tr class="even">
+<td>S_IRGRP<br>S_IWGRP<br>S_IXGRP</td>
+<td>拥有者组可读<BR>拥有者组可写<BR>拥有者组可执行</td>
+</tr>
+<tr class="odd">
+<td>S_IROTH<BR>S_IWOTH<BR>S_IXOTH</td>
+<td>其他人可读<BR>其他人可写<BR>其他人可执行</td>
+</tr>
+</tbody>
+</table>
+<p>作为进程的一部分，每个进程都有一个umask，它是通过调用umask函数来进行设置的。当进程通过带某个参数的open函数来创建一个新文件是，文件的访问权限位就被设置为<code>mode &amp; ~umask</code>.</p>
+<p>进程通过调用close函数关闭一个打开的文件：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="comment">/* 如果成功返回0，出错返回-1 */</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">close</span><span class="params">(<span class="keyword">int</span> fd)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>关闭一个已经关闭的描述符会出错。</p>
+<h2 id="读和写文件">读和写文件</h2>
+<p>应用程序时通过分别调用read和write函数来执行输入和输出的。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 如果成功则为读的字节数，若EOF则为0，若失败则为-1 */</span></span><br><span class="line"><span class="function"><span class="keyword">ssize_t</span> <span class="title">read</span><span class="params">(<span class="keyword">int</span> fd, <span class="keyword">void</span> *buf, <span class="keyword">size_t</span> n)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 如果成功则为写的字节数，如果失败则为-1 */</span></span><br><span class="line"><span class="function"><span class="keyword">ssize_t</span> <span class="title">write</span><span class="params">(<span class="keyword">int</span> fd, <span class="keyword">const</span> <span class="keyword">void</span> *buf, <span class="keyword">size_t</span> n)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>read函数从描述符为fd的当前文件位置复制最多n个字节到内存位置buf。返回值-1表示一个错误，而返回值0表示EOF。否则返回值表示的是实际传送的字节数量。</p>
+<p>write函数从内存位置buf复制至多n个字节到描述符fd的当前文件位置。</p>
+<p>如以下示例： <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DEF_MODE S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DEF_MASK S_IWGRP|S_IWOTH </span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    umask(DEF_MODE);</span><br><span class="line">    <span class="keyword">int</span> fd;</span><br><span class="line">    <span class="keyword">if</span> ((fd = <span class="built_in">open</span>(<span class="string">"test"</span>, O_WRONLY|O_TRUNC|O_CREAT, DEF_MODE)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">"出错了。"</span>);</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">char</span> buf[] = <span class="string">"yueyue nihao a"</span>;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">write</span>(fd, buf, <span class="keyword">sizeof</span>(buf)<span class="number">-1</span>) &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>,<span class="string">"can't write."</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"fd = %d\n"</span>, fd);</span><br><span class="line">    <span class="built_in">close</span>(fd);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过调用lseek函数，应用程序能够显式的修改当前文件的位置。</p>
+<p>在有些情况下，read和write函数传送的字节数会比要求的少（即返回值小于参数值要求的），这种情况不代表有错误，有可能是下列原因：</p>
+<ul>
+<li>读操作时遇到EOF。读的文件实际的大小比要求的要小</li>
+<li>从终端读文本行。如果打开文件时与终端相关联的（如键盘和显示器），那么每个read函数将一次传送一个文本行，返回的值等于文本行的大小。</li>
+<li>读写网络套接字（socket）：如果打开的文件对应于网络套接字，那么内部缓冲约束和较长的网络延迟会引起read和writer返回值比要求的小这种情况。另外对Linux管道（pipe）调用read和write时，也有可能出现这种情况，这是一种进程间通信的方式。</li>
+</ul>
+<p>除了EOF，当你读磁盘文件时，将不会遇到不足值；在写磁盘文件时，也不会遇到不足值。如果你想创建健壮诸如Web服务器这样的网络应用，就必须通过反复调用read和write处理不足值，知道所有需要的字节都传送完毕。</p>
+<!-- 
+### 原子读写文件
+
+如果有多个进程同时追加写一个文件（写日志），会产生问题。引文可能会造成前一个进程的写被后一个进程的写覆盖的问题。  
+问题的主要问题在于，写入之前定位到尾端和写，这两个操作是分开的函数操作的。解决该问题的办法是使这两个操作对于其他进程而言成为一个原子操作。任何多余一个函数调用的操作都不是原子操作，因为在两个函数之间，内核有可能临时挂起进程。 -->
+<p>sizeof在编译期确定大小，而strlen需要执行一次函数调用，在运行期确定大小</p>
+<h2 id="reference">reference</h2>
+<ul>
+<li>《深入理解计算机系统》</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+      
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/I-O/" rel="tag"><i class="fa fa-tag"></i> I/O</a>
+              <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/11/24/%E4%BD%BF%E7%94%A8systemd%E7%AE%A1%E7%90%86redis/" rel="prev" title="使用systemd管理redi">
+      <i class="fa fa-chevron-left"></i> 使用systemd管理redi
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/11/26/%E7%BC%96%E8%AF%91%E9%93%BE%E6%8E%A5/" rel="next" title="编译链接">
+      编译链接 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#unix-io是什么"><span class="nav-text">Unix I&#x2F;O是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#打开和关闭文件特指使用unix-io方式"><span class="nav-text">打开和关闭文件（特指使用Unix I&#x2F;O方式）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#读和写文件"><span class="nav-text">读和写文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reference"><span class="nav-text">reference</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="leegen"
+      src="/images/xueren.jpg">
+  <p class="site-author-name" itemprop="name">leegen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimingWong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimingWong"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:leegener@foxmail.com" title="E-Mail → mailto:leegener@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">leegen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

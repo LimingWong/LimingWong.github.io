@@ -169,7 +169,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/24/%E4%BD%BF%E7%94%A8systemd%E7%AE%A1%E7%90%86redi/">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/12/16/%E5%A4%9A%E7%A7%8DIO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%8A%80%E6%9C%AF%E7%9A%84%E5%AF%B9%E6%AF%94/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/xueren.jpg">
@@ -183,7 +183,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/11/24/%E4%BD%BF%E7%94%A8systemd%E7%AE%A1%E7%90%86redi/" class="post-title-link" itemprop="url">使用systemd管理redi</a>
+            <a href="/2020/12/16/%E5%A4%9A%E7%A7%8DIO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%8A%80%E6%9C%AF%E7%9A%84%E5%AF%B9%E6%AF%94/" class="post-title-link" itemprop="url">多种IO多路复用技术的对比</a>
         </h2>
 
         <div class="post-meta">
@@ -192,10 +192,413 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-11-24 21:01:04 / Modified: 21:03:13" itemprop="dateCreated datePublished" datetime="2020-11-24T21:01:04+08:00">2020-11-24</time>
+              <time title="Created: 2020-12-16 14:08:21" itemprop="dateCreated datePublished" datetime="2020-12-16T14:08:21+08:00">2020-12-16</time>
             </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/12/15/select-poll%E5%92%8Cepoll/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xueren.jpg">
+      <meta itemprop="name" content="leegen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="M&Y">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/12/15/select-poll%E5%92%8Cepoll/" class="post-title-link" itemprop="url">select, poll和epoll</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-12-15 09:04:52" itemprop="dateCreated datePublished" datetime="2020-12-15T09:04:52+08:00">2020-12-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-12-22 09:33:55" itemprop="dateModified" datetime="2020-12-22T09:33:55+08:00">2020-12-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="非阻塞io">非阻塞I/O</h2>
+<p>非阻塞I/O使我们可以发出open，read和write这样的I/O操作，并使这些操作不会永远阻塞。如果这种操作不能完成，则调用立即出错返回，表示该操作如继续执行将阻塞。</p>
+<p>对于一个给定的操作符，有两种为其指定非阻塞I/O的方法。</p>
+<ol type="1">
+<li>如果调用open获得描述符，则可指定O_NONBLOCK标志</li>
+<li>对于已经打开的一个描述符，则可调用fcntl，由该函数打开O_NONBLOCK文件状态标志。</li>
+</ol>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/12/15/select-poll%E5%92%8Cepoll/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/12/09/socket%E5%87%BD%E6%95%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xueren.jpg">
+      <meta itemprop="name" content="leegen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="M&Y">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/12/09/socket%E5%87%BD%E6%95%B0/" class="post-title-link" itemprop="url">socket函数</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-12-09 09:27:57" itemprop="dateCreated datePublished" datetime="2020-12-09T09:27:57+08:00">2020-12-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-12-22 09:31:03" itemprop="dateModified" datetime="2020-12-22T09:31:03+08:00">2020-12-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Unix-%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">Unix 网络编程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="ip地址结构体">ip地址结构体</h2>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">in_addr</span> &#123;</span></span><br><span class="line">    <span class="keyword">uint32_t</span> s_addr;<span class="comment">// 大端存储</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h2 id="网络字节序">网络字节序</h2>
+<p>ipv4的地址存储在这样一个单变量的结构体中，这是早期实现的产物。TCP/IP为任意整数数据项定义了统一的<code>网络字节顺序(network byte order)(大端字节顺序)</code>。</p>
+<p>Unix提供了下面这样的函数在网络和主机字节顺序间实现转换：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/12/09/socket%E5%87%BD%E6%95%B0/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/26/%E7%BC%96%E8%AF%91%E9%93%BE%E6%8E%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xueren.jpg">
+      <meta itemprop="name" content="leegen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="M&Y">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/11/26/%E7%BC%96%E8%AF%91%E9%93%BE%E6%8E%A5/" class="post-title-link" itemprop="url">编译链接</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-11-26 13:21:45" itemprop="dateCreated datePublished" datetime="2020-11-26T13:21:45+08:00">2020-11-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-29 10:18:23" itemprop="dateModified" datetime="2020-11-29T10:18:23+08:00">2020-11-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux/%E9%93%BE%E6%8E%A5/" itemprop="url" rel="index"><span itemprop="name">链接</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><code>链接(linking)</code>是将各种代码和数据片段收集并组合成为一个单一文件的过程，这个文件可被加载(复制)到内存并执行。链接可以执行在编译时(compile time)，即源代码被翻译成机器代码时；也可以执行于加载时(load time)，也就是在程序被加载器加载到内存并执行时；甚至执行于运行时(run time)，也就是由应用程序来执行。在现代系统中，链接是由叫做连接器(linker)的程序自动执行的。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/11/26/%E7%BC%96%E8%AF%91%E9%93%BE%E6%8E%A5/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/25/Unix-I-O/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xueren.jpg">
+      <meta itemprop="name" content="leegen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="M&Y">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/11/25/Unix-I-O/" class="post-title-link" itemprop="url">Unix I/O</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-11-25 23:02:45" itemprop="dateCreated datePublished" datetime="2020-11-25T23:02:45+08:00">2020-11-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-12-15 09:25:39" itemprop="dateModified" datetime="2020-12-15T09:25:39+08:00">2020-12-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="unix-io是什么">Unix I/O是什么</h2>
+<p>将所有的I/O设备模型化为文件，所有的输入和输出都被当做对相应的文件的读和写来执行。这种将设备映射为文件的方式，允许Linux内核引出一个简单、低级的应用接口，称为Unix I/O。这使得所有的输入和输出都能以一种统一且一致的方式来执行：<br />
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/11/25/Unix-I-O/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/24/%E4%BD%BF%E7%94%A8systemd%E7%AE%A1%E7%90%86redis/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xueren.jpg">
+      <meta itemprop="name" content="leegen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="M&Y">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/11/24/%E4%BD%BF%E7%94%A8systemd%E7%AE%A1%E7%90%86redis/" class="post-title-link" itemprop="url">使用systemd管理redi</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-11-24 21:01:04" itemprop="dateCreated datePublished" datetime="2020-11-24T21:01:04+08:00">2020-11-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-25 22:39:34" itemprop="dateModified" datetime="2020-11-25T22:39:34+08:00">2020-11-25</time>
+              </span>
 
           
 
@@ -524,424 +927,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/13/redis%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-zmalloc/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/xueren.jpg">
-      <meta itemprop="name" content="leegen">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="M&Y">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/11/13/redis%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-zmalloc/" class="post-title-link" itemprop="url">redis内存管理-zmalloc</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-11-13 14:02:11" itemprop="dateCreated datePublished" datetime="2020-11-13T14:02:11+08:00">2020-11-13</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-22 09:12:10" itemprop="dateModified" datetime="2020-11-22T09:12:10+08:00">2020-11-22</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>redis在Linux平台上使用jemalloc作为默认的内存管理器，用户也可以自己修改使用tcmalloc、tcmalloc_minimal或者libc。</p>
-<p>不管使用哪种内存管理器，redis都会进行统一的封装，使其对外的api保持一致。tcmalloc和jemalloc与c语言标准的内存分配api不一致，redis首先通过宏定义的方式统一映射，不同库的具体的映射关系如下：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/11/13/redis%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-zmalloc/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/01/%E5%A0%86/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/xueren.jpg">
-      <meta itemprop="name" content="leegen">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="M&Y">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/11/01/%E5%A0%86/" class="post-title-link" itemprop="url">堆</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-11-01 19:43:29" itemprop="dateCreated datePublished" datetime="2020-11-01T19:43:29+08:00">2020-11-01</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-14 10:39:27" itemprop="dateModified" datetime="2020-11-14T10:39:27+08:00">2020-11-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">数据结构</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>堆这种数据结构是一个可以看作完全二叉树的数组对象。如下图所示：</p>
-<figure>
-<img src="/images/heap.png" alt="" /><figcaption>image-20201101194607312</figcaption>
-</figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/11/01/%E5%A0%86/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/01/%E7%BA%A2%E9%BB%91%E6%A0%91/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/xueren.jpg">
-      <meta itemprop="name" content="leegen">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="M&Y">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/11/01/%E7%BA%A2%E9%BB%91%E6%A0%91/" class="post-title-link" itemprop="url">红黑树</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-11-01 17:27:27" itemprop="dateCreated datePublished" datetime="2020-11-01T17:27:27+08:00">2020-11-01</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-14 10:39:27" itemprop="dateModified" datetime="2020-11-14T10:39:27+08:00">2020-11-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">数据结构</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>红黑树是另一种自平衡的二叉搜索树，但是没有AVL树要求那么严格。在插入和删除操作比较多的场合，AVL树调整的频率会提高，而调整的代价较高，因此就引入了调整频率没那么高的红黑树。</p>
-<p>红黑树的节点有一个额外的颜色属性，值为红或者黑。通过限制节点的颜色，从根节点到到叶子结点的任何一条路径都不会比其他路径长2倍，这样整棵树就近似平衡。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/11/01/%E7%BA%A2%E9%BB%91%E6%A0%91/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/01/AVL%E6%A0%91/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/xueren.jpg">
-      <meta itemprop="name" content="leegen">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="M&Y">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/11/01/AVL%E6%A0%91/" class="post-title-link" itemprop="url">AVL树</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-11-01 16:23:27" itemprop="dateCreated datePublished" datetime="2020-11-01T16:23:27+08:00">2020-11-01</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-14 10:39:27" itemprop="dateModified" datetime="2020-11-14T10:39:27+08:00">2020-11-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">数据结构</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>AVL树是一种特殊的二叉搜索树，在满足BST的操作基础上，能够保证任意一个节点的左右孩子高度差不超过1。之所以这样设计，是因为BST的搜索操作在最坏的情况下时间复杂度为<span class="math inline">\(O(n)\)</span>，而通常情况下为<span class="math inline">\(O(lgn)\)</span>。树形结构退化成了线性结构，如下图所示：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/11/01/AVL%E6%A0%91/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/11/01/%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91-BST/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/xueren.jpg">
-      <meta itemprop="name" content="leegen">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="M&Y">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/11/01/%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91-BST/" class="post-title-link" itemprop="url">二叉搜索树(BST)</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-11-01 13:12:46" itemprop="dateCreated datePublished" datetime="2020-11-01T13:12:46+08:00">2020-11-01</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-14 10:39:27" itemprop="dateModified" datetime="2020-11-14T10:39:27+08:00">2020-11-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">数据结构</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>动态集(Dynamic set)是一种数据结构，它通常支持以下全部或者部分操作：</p>
-<ul>
-<li><p><code>search(S,k)</code>---返回<code>x</code>，其中<code>x.key = k</code></p></li>
-<li><p><code>insert(S,x)</code>---向<code>S</code>中插入<code>x</code></p></li>
-<li><p><code>delete(S,x)</code>---从<code>S</code>中删除<code>x</code></p></li>
-<li><p><code>minimum(S)</code>---从S中返回<code>x.key</code>最小的元素<code>x</code></p></li>
-<li><p><code>maximum(S)</code> ---从S中返回<code>x.key</code>最大的元素<code>x</code></p></li>
-<li><p><code>successor(S,x)</code> ----返回比<code>x.key</code>大的最小元素<code>y</code></p></li>
-<li><p><code>predecessor(S,x)</code>---返回比<code>x.key</code>小的最大元素<code>y</code></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/11/01/%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91-BST/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1012,18 +997,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">13</span>
+          <span class="site-state-item-count">18</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">8</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">18</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
