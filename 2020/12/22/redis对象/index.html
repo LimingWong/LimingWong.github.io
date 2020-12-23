@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/blog.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/blog.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/blog.png">
+  <link rel="mask-icon" href="/images/blog.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-big-counter.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"github.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"KWFE73CESY","apiKey":"5438c68878ca12b68378b626910ca2bf","indexName":"blog_search","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="redis对象是对redis数据结构的又一次封装，将对外的数据类型和内部的数据结构实现分开。这样可以更灵活的管理数据。 redis中对象结构体的定义如下： 123456789101112&#x2F;* server.h *&#x2F;typedef struct redisObject &amp;#123;    unsigned type:4;    unsigned encoding:4;    &#x2F;* 上次被访问的时">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis对象">
+<meta property="og:url" content="https://github.com/LimingWong/2020/12/22/redis%E5%AF%B9%E8%B1%A1/index.html">
+<meta property="og:site_name" content="M&amp;Y">
+<meta property="og:description" content="redis对象是对redis数据结构的又一次封装，将对外的数据类型和内部的数据结构实现分开。这样可以更灵活的管理数据。 redis中对象结构体的定义如下： 123456789101112&#x2F;* server.h *&#x2F;typedef struct redisObject &amp;#123;    unsigned type:4;    unsigned encoding:4;    &#x2F;* 上次被访问的时">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-12-22T01:36:48.000Z">
+<meta property="article:modified_time" content="2020-12-23T14:17:15.996Z">
+<meta property="article:author" content="leegen">
+<meta property="article:tag" content="redis对象">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://github.com/LimingWong/2020/12/22/redis%E5%AF%B9%E8%B1%A1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>redis对象 | M&Y</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">M&Y</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">是哪个小可爱在看我 :)</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://github.com/LimingWong/2020/12/22/redis%E5%AF%B9%E8%B1%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xueren.jpg">
+      <meta itemprop="name" content="leegen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="M&Y">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          redis对象
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-12-22 09:36:48" itemprop="dateCreated datePublished" datetime="2020-12-22T09:36:48+08:00">2020-12-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-12-23 22:17:15" itemprop="dateModified" datetime="2020-12-23T22:17:15+08:00">2020-12-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/redis/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">数据结构</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>redis对象是对redis数据结构的又一次封装，将对外的数据类型和内部的数据结构实现分开。这样可以更灵活的管理数据。</p>
+<p>redis中对象结构体的定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* server.h */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisObject</span> &#123;</span></span><br><span class="line">    <span class="keyword">unsigned</span> type:<span class="number">4</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> encoding:<span class="number">4</span>;</span><br><span class="line">    <span class="comment">/* 上次被访问的时间 */</span></span><br><span class="line">    <span class="keyword">unsigned</span> lru:LRU_BITS; <span class="comment">/* LRU time (relative to global lru_clock) or</span></span><br><span class="line"><span class="comment">                            * LFU data (least significant 8 bits frequency</span></span><br><span class="line"><span class="comment">                            * and most significant 16 bits access time). */</span></span><br><span class="line">    <span class="comment">/* 引用计数 */</span></span><br><span class="line">    <span class="keyword">int</span> refcount;</span><br><span class="line">    <span class="keyword">void</span> *ptr;</span><br><span class="line">&#125; robj;</span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+<p>结构体使用4位表示对象的类型，4位表示对象的编码，24位（LRU_BITS)作为时间戳，记录该对象上次被访问的时间。refcount记录当前引用该对象的指针有多少个，ptr指针指向数据。</p>
+<h2 id="redis对象类型">redis对象类型</h2>
+<p>redis 6.0版本中定义了以下7种对象：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* server.h */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_STRING 0    <span class="comment">/* String object. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_LIST 1      <span class="comment">/* List object. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_SET 2       <span class="comment">/* Set object. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ZSET 3      <span class="comment">/* Sorted set object. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_HASH 4      <span class="comment">/* Hash object. */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_MODULE 5    <span class="comment">/* Module object. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_STREAM 6    <span class="comment">/* Stream object. */</span></span></span><br></pre></td></tr></table></figure>
+<p>这七种对象对应<code>robj</code>中的type变量，其中OBJ_MODULE是一种特殊的对象。</p>
+<p>可以通过以下函数获取一个对象的类型名称：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* object.c */</span></span><br><span class="line"><span class="function"><span class="keyword">char</span>* <span class="title">getObjectTypeName</span><span class="params">(robj *o)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span>* type;</span><br><span class="line">    <span class="keyword">if</span> (o == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        type = <span class="string">"none"</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">switch</span>(o-&gt;type) &#123;</span><br><span class="line">        <span class="keyword">case</span> OBJ_STRING: type = <span class="string">"string"</span>; <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_LIST: type = <span class="string">"list"</span>; <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_SET: type = <span class="string">"set"</span>; <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_ZSET: type = <span class="string">"zset"</span>; <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_HASH: type = <span class="string">"hash"</span>; <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_STREAM: type = <span class="string">"stream"</span>; <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_MODULE: &#123;</span><br><span class="line">            moduleValue *mv = o-&gt;ptr;</span><br><span class="line">            type = mv-&gt;type-&gt;name;</span><br><span class="line">        &#125;; <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>: type = <span class="string">"unknown"</span>; <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> type;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>type</code>命令就是调用该函数实现的。</p>
+<h2 id="redis对象的编码实现方式">redis对象的编码（实现方式）</h2>
+<p>redis 6.0中根据对象的实现情况，定义了以下几种编码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* server.h */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* redisobj的编码 */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_RAW 0     <span class="comment">/* Raw representation */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_INT 1     <span class="comment">/* Encoded as integer */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_HT 2      <span class="comment">/* Encoded as hash table */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_ZIPMAP 3  <span class="comment">/* Encoded as zipmap */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_LINKEDLIST 4 <span class="comment">/* No longer used: old list encoding.  */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_ZIPLIST 5 <span class="comment">/* Encoded as ziplist */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_INTSET 6  <span class="comment">/* Encoded as intset */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_SKIPLIST 7  <span class="comment">/* Encoded as skiplist */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_EMBSTR 8  <span class="comment">/* Embedded sds string encoding */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_QUICKLIST 9 <span class="comment">/* Encoded as linked list of ziplists */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_STREAM 10 <span class="comment">/* Encoded as a radix tree of listpacks */</span></span></span><br></pre></td></tr></table></figure>
+<p>这些编码对应<code>robj</code>结构体中<code>encoding</code>变量。</p>
+<p>redis实现了<code>OBJECT</code>命令来获取一些redis对象的信息，命令的使用方法如下：</p>
+<blockquote>
+<p><code>OBJECT</code> &lt;<code>refcount</code>|<code>encoding</code>|<code>idletime</code>|<code>freq</code>&gt; &lt;<code>key</code>&gt;</p>
+</blockquote>
+<ul>
+<li><p><code>refcount</code>选项可以获取<code>key</code>对应对象的引用个数</p></li>
+<li><p><code>encoding</code>选项可以获取<code>key</code>对应对象的编码</p></li>
+<li><p><code>idletime</code>选项可以获取<code>key</code>对应对象的空转时间</p></li>
+<li><p><code>freq</code>选项可以获取<code>key</code>对应对象的使用频率</p></li>
+</ul>
+<h2 id="redis对象创建">redis对象创建</h2>
+<p>对于不同<code>type</code>的redis对象有不同的创建函数，redis提供了一个通用的函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* object.c */</span></span><br><span class="line"><span class="function">robj *<span class="title">createObject</span><span class="params">(<span class="keyword">int</span> type, <span class="keyword">void</span> *ptr)</span> </span>&#123;</span><br><span class="line">    robj *o = zmalloc(<span class="keyword">sizeof</span>(*o));</span><br><span class="line">    o-&gt;type = type;</span><br><span class="line">    o-&gt;encoding = OBJ_ENCODING_RAW;</span><br><span class="line">    o-&gt;ptr = ptr;</span><br><span class="line">    <span class="comment">/* 引用数设为1 */</span></span><br><span class="line">    o-&gt;refcount = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the LRU to the current lruclock (minutes resolution), or</span></span><br><span class="line"><span class="comment">     * alternatively the LFU counter. */</span></span><br><span class="line">    <span class="keyword">if</span> (server.maxmemory_policy &amp; MAXMEMORY_FLAG_LFU) &#123;</span><br><span class="line">        o-&gt;lru = (LFUGetTimeInMinutes()&lt;&lt;<span class="number">8</span>) | LFU_INIT_VAL;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        o-&gt;lru = LRU_CLOCK();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个函数创建一个普通的对象，通常情况下不同<code>type</code>的redis对象也会基于这个函数封装一个自己的对象创建函数来做一些调整。</p>
+<h2 id="共享对象">共享对象</h2>
+<p>有一些值使用的十分频繁，如果每个值都创建一个对象的话会浪费宝贵的内存资源。redis引入了一种成为共享对象的对象，这样同一个对象可以由多个线程使用而不用加锁，大大节省了资源。</p>
+<p>它是一种refcount变量为<code>OBJ_SHARED_REFCOUNT</code>值的特殊对象，该值一般为<code>INT_MAX</code>。</p>
+<p>共享对象和普通对象最大特点是它的refcount不可修改。</p>
+<p>目前redis内部只使用了一种共享对象：整数0-9999。redis服务器启动初始化的时候会创建10000个对象，每个对象持有一个数字。它的<code>type</code>属性为<code>OBJ_STRING</code>,<code>encoding</code>属性为<code>OBJ_ENCODING_INT</code>。这些共享对象可以被不同线程使用而不需要加互斥锁.</p>
+<p>redis提供一个函数用来创建共享对象：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* object.c */</span></span><br><span class="line"><span class="function">robj *<span class="title">makeObjectShared</span><span class="params">(robj *o)</span> </span>&#123;</span><br><span class="line">    serverAssert(o-&gt;refcount == <span class="number">1</span>);</span><br><span class="line">    o-&gt;refcount = OBJ_SHARED_REFCOUNT;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>将对象设置为共享对象之前要保证只有一个引用。</p>
+<p>创建共享对象的通常方式为： &gt; robj *myobject = makeObjectShared(createObject(...));</p>
+<h2 id="在栈上分配的对象">在栈上分配的对象</h2>
+<p>redis对在栈上分配的对象进行特殊的管理。因为栈上的对象生命周期比较短，函数执行完毕之后对象也会销毁。</p>
+<p>redis使用一个宏将一个对象初始化(标记)为栈对象： <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* server.h */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> initStaticStringObject(_var,_ptr) do &#123; \</span></span><br><span class="line">    _var.refcount = OBJ_STATIC_REFCOUNT; \</span><br><span class="line">    _var.type = OBJ_STRING; \</span><br><span class="line">    _var.encoding = OBJ_ENCODING_RAW; \</span><br><span class="line">    _var.ptr = _ptr; \</span><br><span class="line">&#125; <span class="keyword">while</span>(<span class="number">0</span>)</span><br></pre></td></tr></table></figure></p>
+<p><code>refcount</code>设置为<code>OBJ_STATIC_REFCOUNT</code>，这个宏值为<code>INT_MAX-1</code>。</p>
+<p>函数外部的指针持有这样的对象是危险的，因为一旦函数执行完毕，这个对象就会销毁，而指针指向的位置就不再是原来的对象。</p>
+<h2 id="redis对象引用的管理">redis对象引用的管理</h2>
+<p>如果一个指针想要持有一个已经存在的对象，那么需要对这个对象引用数量<code>refcount</code>加1：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* object.c */</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">incrRefCount</span><span class="params">(robj *o)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (o-&gt;refcount &lt; OBJ_FIRST_SPECIAL_REFCOUNT) &#123;</span><br><span class="line">        <span class="comment">/* 引用数小于INT_MAX-1 */</span></span><br><span class="line">        o-&gt;refcount++;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (o-&gt;refcount == OBJ_SHARED_REFCOUNT) &#123;</span><br><span class="line">            <span class="comment">/* 引用数等于INT_MAX,是一个共享对象，则什么都不做，这个值不可修改。  */</span></span><br><span class="line">            <span class="comment">/* Nothing to do: this refcount is immutable. */</span></span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (o-&gt;refcount == OBJ_STATIC_REFCOUNT) &#123;</span><br><span class="line">            <span class="comment">/* 尝试持有一个栈上分配的对象，发出警告信息。*/</span></span><br><span class="line">            serverPanic(<span class="string">"You tried to retain an object allocated in the stack"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果想要减持一个对象，那么需要对这个对象引用数量<code>refcount</code>减1：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">decrRefCount</span><span class="params">(robj *o)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (o-&gt;refcount == <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="comment">/* 引用数减1后没有引用，释放对象的空间 */</span></span><br><span class="line">        <span class="keyword">switch</span>(o-&gt;type) &#123;</span><br><span class="line">        <span class="keyword">case</span> OBJ_STRING: freeStringObject(o); <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_LIST: freeListObject(o); <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_SET: freeSetObject(o); <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_ZSET: freeZsetObject(o); <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_HASH: freeHashObject(o); <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_MODULE: freeModuleObject(o); <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> OBJ_STREAM: freeStreamObject(o); <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>: serverPanic(<span class="string">"Unknown object type"</span>); <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        zfree(o);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (o-&gt;refcount &lt;= <span class="number">0</span>) serverPanic(<span class="string">"decrRefCount against refcount &lt;= 0"</span>);</span><br><span class="line">        <span class="comment">/* 引用等于INT_MAX时，不可修改；否则直接减1 */</span></span><br><span class="line">        <span class="keyword">if</span> (o-&gt;refcount != OBJ_SHARED_REFCOUNT) o-&gt;refcount--;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="复用对象">复用对象</h2>
+<p>redis定义了一组复用对象，是redis中使用频率很高的一些命令或其他变量并在服务器启动的时候进行初始化。这些变量通过一个结构体持有：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* server.h */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sharedObjectsStruct</span> &#123;</span></span><br><span class="line">    robj *crlf, *ok, *err, *emptybulk, *czero, *cone, *pong, *space,</span><br><span class="line">    *colon, *queued, *null[<span class="number">4</span>], *nullarray[<span class="number">4</span>], *emptymap[<span class="number">4</span>], *emptyset[<span class="number">4</span>],</span><br><span class="line">    *emptyarray, *wrongtypeerr, *nokeyerr, *syntaxerr, *sameobjecterr,</span><br><span class="line">    *outofrangeerr, *noscripterr, *loadingerr, *slowscripterr, *bgsaveerr,</span><br><span class="line">    *masterdownerr, *roslaveerr, *execaborterr, *noautherr, *noreplicaserr,</span><br><span class="line">    *busykeyerr, *oomerr, *plus, *messagebulk, *pmessagebulk, *subscribebulk,</span><br><span class="line">    *unsubscribebulk, *psubscribebulk, *punsubscribebulk, *del, *unlink,</span><br><span class="line">    *rpop, *lpop, *lpush, *rpoplpush, *zpopmin, *zpopmax, *emptyscan,</span><br><span class="line">    *multi, *exec,</span><br><span class="line">    *select[PROTO_SHARED_SELECT_CMDS],</span><br><span class="line">    *integers[OBJ_SHARED_INTEGERS],</span><br><span class="line">    *mbulkhdr[OBJ_SHARED_BULKHDR_LEN], <span class="comment">/* "*&lt;value&gt;\r\n" */</span></span><br><span class="line">    *bulkhdr[OBJ_SHARED_BULKHDR_LEN];  <span class="comment">/* "$&lt;value&gt;\r\n" */</span></span><br><span class="line">    sds minstring, maxstring;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+      
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/redis%E5%AF%B9%E8%B1%A1/" rel="tag"><i class="fa fa-tag"></i> redis对象</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/12/16/%E5%A4%9A%E7%A7%8DIO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%8A%80%E6%9C%AF%E7%9A%84%E5%AF%B9%E6%AF%94/" rel="prev" title="多种IO多路复用技术的对比">
+      <i class="fa fa-chevron-left"></i> 多种IO多路复用技术的对比
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#redis对象类型"><span class="nav-text">redis对象类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#redis对象的编码实现方式"><span class="nav-text">redis对象的编码（实现方式）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#redis对象创建"><span class="nav-text">redis对象创建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#共享对象"><span class="nav-text">共享对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在栈上分配的对象"><span class="nav-text">在栈上分配的对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#redis对象引用的管理"><span class="nav-text">redis对象引用的管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#复用对象"><span class="nav-text">复用对象</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="leegen"
+      src="/images/xueren.jpg">
+  <p class="site-author-name" itemprop="name">leegen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimingWong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimingWong"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:leegener@foxmail.com" title="E-Mail → mailto:leegener@foxmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">leegen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
