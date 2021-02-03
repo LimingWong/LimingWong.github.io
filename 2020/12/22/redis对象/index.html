@@ -29,11 +29,13 @@
 <meta property="og:site_name" content="M&amp;Y">
 <meta property="og:description" content="redis对象是对redis数据结构的又一次封装，将对外的数据类型和内部的数据结构实现分开。这样可以更灵活的管理数据。 redis中对象结构体的定义如下： 123456789101112&#x2F;* server.h *&#x2F;typedef struct redisObject &amp;#123;    unsigned type:4;    unsigned encoding:4;    &#x2F;* 上次被访问的时">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://github.com/LimingWong/2020/12/22/images/sharedobject.png">
 <meta property="article:published_time" content="2020-12-22T01:36:48.000Z">
-<meta property="article:modified_time" content="2020-12-23T14:17:15.996Z">
+<meta property="article:modified_time" content="2020-12-25T02:05:23.000Z">
 <meta property="article:author" content="leegen">
 <meta property="article:tag" content="redis对象">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/LimingWong/2020/12/22/images/sharedobject.png">
 
 <link rel="canonical" href="https://github.com/LimingWong/2020/12/22/redis%E5%AF%B9%E8%B1%A1/">
 
@@ -205,7 +207,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-12-23 22:17:15" itemprop="dateModified" datetime="2020-12-23T22:17:15+08:00">2020-12-23</time>
+                <time title="Modified: 2020-12-25 10:05:23" itemprop="dateModified" datetime="2020-12-25T10:05:23+08:00">2020-12-25</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -278,6 +280,8 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* object.c */</span></span><br><span class="line"><span class="function">robj *<span class="title">makeObjectShared</span><span class="params">(robj *o)</span> </span>&#123;</span><br><span class="line">    serverAssert(o-&gt;refcount == <span class="number">1</span>);</span><br><span class="line">    o-&gt;refcount = OBJ_SHARED_REFCOUNT;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>将对象设置为共享对象之前要保证只有一个引用。</p>
 <p>创建共享对象的通常方式为： &gt; robj *myobject = makeObjectShared(createObject(...));</p>
+<p>为什么redis不共享包含字符串的对象？引用《redis设计与实现》的回答：</p>
+<p><img src="../images/sharedobject.png" /></p>
 <h2 id="在栈上分配的对象">在栈上分配的对象</h2>
 <p>redis对在栈上分配的对象进行特殊的管理。因为栈上的对象生命周期比较短，函数执行完毕之后对象也会销毁。</p>
 <p>redis使用一个宏将一个对象初始化(标记)为栈对象： <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* server.h */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> initStaticStringObject(_var,_ptr) do &#123; \</span></span><br><span class="line">    _var.refcount = OBJ_STATIC_REFCOUNT; \</span><br><span class="line">    _var.type = OBJ_STRING; \</span><br><span class="line">    _var.encoding = OBJ_ENCODING_RAW; \</span><br><span class="line">    _var.ptr = _ptr; \</span><br><span class="line">&#125; <span class="keyword">while</span>(<span class="number">0</span>)</span><br></pre></td></tr></table></figure></p>
@@ -312,10 +316,13 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/12/16/%E5%A4%9A%E7%A7%8DIO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%8A%80%E6%9C%AF%E7%9A%84%E5%AF%B9%E6%AF%94/" rel="prev" title="多种IO多路复用技术的对比">
-      <i class="fa fa-chevron-left"></i> 多种IO多路复用技术的对比
+    <a href="/2020/12/15/select-poll%E5%92%8Cepoll/" rel="prev" title="select, poll和epoll">
+      <i class="fa fa-chevron-left"></i> select, poll和epoll
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2020/12/23/redis%E5%AF%B9%E8%B1%A1-string%E5%AF%B9%E8%B1%A1/" rel="next" title="redis对象-string对象">
+      redis对象-string对象 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -389,7 +396,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -437,8 +444,8 @@
 
 <div class="copyright">
   
-  &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
